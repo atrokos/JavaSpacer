@@ -1,0 +1,79 @@
+[Agricultural.Production]
+produce = 112
+meat = 0
+metals = 0
+fertilizers = 56
+machinery = 0
+oil = 0
+spices = 39
+gems = 0
+devices = 0
+
+[Agricultural.Consumption]
+produce = 0
+meat = 50
+metals = 20
+fertilizers = 0
+machinery = 20
+oil = 5
+spices = 0
+gems = 10
+devices = 5
+
+
+[Industrial.Production]
+produce = 0
+meat = 100
+metals = 0
+fertilizers = 0
+machinery = 54
+oil = 0
+spices = 0
+gems = 37
+devices = 0
+
+[Industrial.Consumption]
+produce = 100
+meat = 0
+metals = 30
+fertilizers = 60
+machinery = 0
+oil = 20
+spices = 35
+gems = 0
+devices = 10
+
+
+[Technological.Production]
+produce = 0
+meat = 0
+metals = 95
+fertilizers = 0
+machinery = 0
+oil = 43
+spices = 0
+gems = 0
+devices = 28
+
+[Technological.Consumption]
+produce = 130
+meat = 25
+metals = 0
+fertilizers = 50
+machinery = 30
+oil = 0
+spices = 45
+gems = 30
+devices = 0
+
+
+[Base_prices]
+produce = 50
+meat = 90
+metals = 110
+fertilizers = 130
+machinery = 150
+oil = 170
+spices = 190
+gems = 210
+devices = 230

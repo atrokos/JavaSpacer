@@ -1,0 +1,11 @@
+[Entities.base_credits]
+player = 1000
+pirate = 2000
+trader = 2500
+police = 0
+
+[Entities.default_ships]
+player = "Hornet"
+pirate = "Mosquito"
+trader = "Beetle"
+police = "Hornet"

@@ -1,0 +1,67 @@
+# This is a TOML file that contains the constants for different types of ships
+
+[Ships.Flea]
+Hull = 25
+Cargo = 10
+MaxJump = 20
+Shields = 0
+Damage = 0
+Maneuver = 35
+
+[Ships.Gnat]
+Hull = 100
+Cargo = 15
+MaxJump = 14
+Shields = 0
+Damage = 15
+Maneuver = 25
+
+[Ships.Firefly]
+Hull = 100
+Cargo = 20
+MaxJump = 17
+Shields = 15
+Damage = 20
+Maneuver = 30
+
+[Ships.Mosquito]
+Hull = 100
+Cargo = 15
+MaxJump = 13
+Shields = 15
+Damage = 30
+Maneuver = 40
+
+[Ships.Bumblebee]
+Hull = 100
+Cargo = 25
+MaxJump = 15
+Shields = 30
+Damage = 25
+Maneuver = 30
+
+[Ships.Hornet]
+Hull = 150
+Cargo = 20
+MaxJump = 16
+Shields = 30
+Damage = 45
+Maneuver = 55
+
+[Ships.Beetle]
+Hull = 100
+Cargo = 50
+MaxJump = 14
+Shields = 25
+Damage = 25
+Maneuver = 35
+
+# Ship prices
+[Ships.Prices]
+Flea = 500
+Gnat = 1000
+Firefly = 2000
+Mosquito = 3000
+Bumblebee = 4500
+Hornet = 6000
+Beetle = 5500

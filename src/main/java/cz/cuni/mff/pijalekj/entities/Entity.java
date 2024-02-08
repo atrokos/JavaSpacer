@@ -10,7 +10,7 @@ import cz.cuni.mff.pijalekj.ships.Ship;
 
 import javax.swing.border.EmptyBorder;
 
-public abstract class Entity {
+public abstract class Entity implements BattleReady {
     protected TravelManager travelManager;
     protected EntityManager entityManager;
     protected CriminalsManager criminalsManager;
@@ -18,8 +18,7 @@ public abstract class Entity {
     protected Ship ownedShip;
     protected EntityStats entityStats;
     protected EntityActions prevAction;
-    protected final long entityID;
-
+    protected final int entityID;
 
     public Ship getOwnedShip() {
         return ownedShip;
@@ -38,7 +37,7 @@ public abstract class Entity {
     }
 
     public Entity(TravelManager travelManager, EntityManager entityManager, CriminalsManager criminalsManager,
-                  Ship ownedShip, EntityStats entityStats, EntityActions prevAction, long entityID) {
+                  Ship ownedShip, EntityStats entityStats, EntityActions prevAction, int entityID) {
         this.travelManager = travelManager;
         this.entityManager = entityManager;
         this.criminalsManager = criminalsManager;
@@ -49,12 +48,6 @@ public abstract class Entity {
     }
 
     public abstract void play();
-
-    public abstract BattleActionType battle(Entity opponent);
-
-    public abstract void won(Entity opponent);
-
-    public abstract void lost();
 
     public boolean isAlive() {
         return ownedShip.getShipStats().health.getCurr() > 0;
@@ -74,15 +67,15 @@ public abstract class Entity {
         ownedShip.getShipStats().cargo.changeBy(number);
     }
 
-    public long getCurrPosition() {
+    public int getCurrPosition() {
         return travelManager.getCurrPosition();
     }
 
-    public long getNextPosition() {
+    public int getNextPosition() {
         return travelManager.getNextPosition();
     }
 
-    public long getID() {
+    public int getID() {
         return entityID;
     }
 
