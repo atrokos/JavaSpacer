@@ -30,11 +30,27 @@ public class Planet {
         return planetType;
     }
 
-    // Goods - all goods of the entity; amount - what to sell/buy;
-    // credits - entity's credits, to check if it can afford it
-    public int sellBuy(int[] goods, int[] toSell, int credits) {
-        // TODO - promyslet jinak, takhle to moc nedava smysl
-        throw new IllegalArgumentException("This method was not implemented yet!");
+    // Good - the good to be bought from the planet; amount - how many to buy;
+    // returns the final price (positive)
+    public int buy(int good, int amount) {
+        var goods = goodsPrices.goods;
+        var prices = goodsPrices.prices;
+
+        if (goods[good] < amount) {
+            throw new IllegalArgumentException("Planet " + getName() + "does not have enough of the commodity!");
+        }
+        goods[good] -= amount;
+        return amount * prices[good];
+    }
+
+    // Good - the good to be sold to the planet; amount - how many to sell
+    // Returns the final price (positive)
+    public int sell(int good, int amount) {
+        var goods = goodsPrices.goods;
+        var prices = goodsPrices.prices;
+
+        goods[good] += amount;
+        return amount * prices[good];
     }
     public void update() {
         updateIndustry();
