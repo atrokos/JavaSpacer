@@ -1,8 +1,6 @@
 package cz.cuni.mff.pijalekj.managers;
 import cz.cuni.mff.pijalekj.entities.Planet;
 
-//TODO all methods
-
 
 import java.util.ArrayList;
 import java.util.HashSet;

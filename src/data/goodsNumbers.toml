@@ -67,7 +67,7 @@ gems = 30
 devices = 0
 
 
-[Base_prices]
+[BasePrices]
 produce = 50
 meat = 90
 metals = 110

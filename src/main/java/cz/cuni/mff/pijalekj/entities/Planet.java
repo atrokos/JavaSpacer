@@ -1,7 +1,10 @@
 package cz.cuni.mff.pijalekj.entities;
 
-import cz.cuni.mff.pijalekj.entities.GoodsPrices;
+import cz.cuni.mff.pijalekj.constants.Constants;
+import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.enums.PlanetIndustryType;
+
+import java.util.Random;
 
 public class Planet {
     protected final String name;
@@ -26,26 +29,60 @@ public class Planet {
     public PlanetIndustryType getPlanetType() {
         return planetType;
     }
-    public int sellBuy(int[] goods, int credits) {
-        // TODO
+
+    // Goods - all goods of the entity; amount - what to sell/buy;
+    // credits - entity's credits, to check if it can afford it
+    public int sellBuy(int[] goods, int[] toSell, int credits) {
+        // TODO - promyslet jinak, takhle to moc nedava smysl
+        throw new IllegalArgumentException("This method was not implemented yet!");
     }
     public void update() {
         updateIndustry();
+        updateItems();
         updatePrices();
     }
     private void updateIndustry() {
-        // TODO
+        var goods = goodsPrices.goods;
+        String baseKey = getPlanetType().toString() + ".Production.";
+
+        for (var goodType : GoodsIndex.values()) {
+            String key = baseKey + goodType.toString();
+            goods[goodType.ordinal()] += Constants.goods.getLong(key);
+        }
     }
     private void updatePrices() {
-        // TODO
+        Random random = new Random();
+        var goods = goodsPrices.goods;
+        var prices = goodsPrices.prices;
+
+        String baseKey = "BasePrices.";
+        for (var goodType : GoodsIndex.values()) {
+            String key = baseKey + goodType.toString();
+            int basePrice = Constants.goods.getLong(key).intValue() + random.nextInt(0, 21);
+            int offset = goods[goodType.ordinal()];
+
+            prices[goodType.ordinal()] = computePrice(basePrice, offset);
+        }
     }
     private void updateItems() {
-        // TODO
+        var goods = goodsPrices.goods;
+        String baseKey = getPlanetType().toString() + ".Consumption.";
+
+        for (var goodType : GoodsIndex.values()) {
+            String key = baseKey + goodType.toString();
+            int by = Constants.goods.getLong(key).intValue();
+            int origAmount = goods[goodType.ordinal()];
+            goods[goodType.ordinal()] = consumeGood(origAmount, by);
+        }
     }
-    private void setPrice(int good, int base, int offset) {
-        // TODO
+    private int computePrice(int base, int offset) {
+        int newPrice = base - (offset / 3);
+        if (newPrice <= 0) {
+            newPrice = 20;
+        }
+        return newPrice;
     }
-    private void consumeGood(int good, int by) {
-        // TODO
+    private int consumeGood(int origAmount, int by) {
+        return by > origAmount ? 0 : origAmount - by;
     }
 }
