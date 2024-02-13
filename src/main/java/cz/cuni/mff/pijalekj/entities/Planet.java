@@ -11,7 +11,7 @@ public class Planet {
     protected final long planetID;
     protected GoodsPrices goodsPrices;
     protected final PlanetIndustryType planetType;
-    public Planet(String name, long planetID, GoodsPrices goodsPrices, PlanetIndustryType planetType) {
+    public Planet(String name, PlanetIndustryType planetType, long planetID, GoodsPrices goodsPrices) {
         this.name = name;
         this.planetID = planetID;
         this.goodsPrices = goodsPrices;
@@ -44,7 +44,7 @@ public class Planet {
     }
 
     // Good - the good to be sold to the planet; amount - how many to sell
-    // Returns the final price (positive)
+    // Returns the final cost (positive)
     public int sell(int good, int amount) {
         var goods = goodsPrices.goods;
         var prices = goodsPrices.prices;
@@ -62,7 +62,7 @@ public class Planet {
         String baseKey = getPlanetType().toString() + ".Production.";
 
         for (var goodType : GoodsIndex.values()) {
-            String key = baseKey + goodType.toString();
+            String key = baseKey + goodType;
             goods[goodType.ordinal()] += Constants.goods.getLong(key);
         }
     }
@@ -73,7 +73,7 @@ public class Planet {
 
         String baseKey = "BasePrices.";
         for (var goodType : GoodsIndex.values()) {
-            String key = baseKey + goodType.toString();
+            String key = baseKey + goodType;
             int basePrice = Constants.goods.getLong(key).intValue() + random.nextInt(0, 21);
             int offset = goods[goodType.ordinal()];
 
@@ -85,7 +85,7 @@ public class Planet {
         String baseKey = getPlanetType().toString() + ".Consumption.";
 
         for (var goodType : GoodsIndex.values()) {
-            String key = baseKey + goodType.toString();
+            String key = baseKey + goodType;
             int by = Constants.goods.getLong(key).intValue();
             int origAmount = goods[goodType.ordinal()];
             goods[goodType.ordinal()] = consumeGood(origAmount, by);

@@ -7,6 +7,7 @@ MaxJump = 20
 Shields = 0
 Damage = 0
 Maneuver = 35
+Size = "Small"
 
 [Ships.Gnat]
 Hull = 100
@@ -15,6 +16,7 @@ MaxJump = 14
 Shields = 0
 Damage = 15
 Maneuver = 25
+Size = "Small"
 
 [Ships.Firefly]
 Hull = 100
@@ -23,6 +25,7 @@ MaxJump = 17
 Shields = 15
 Damage = 20
 Maneuver = 30
+Size = "Small"
 
 [Ships.Mosquito]
 Hull = 100
@@ -31,6 +34,7 @@ MaxJump = 13
 Shields = 15
 Damage = 30
 Maneuver = 40
+Size = "Small"
 
 [Ships.Bumblebee]
 Hull = 100
@@ -39,6 +43,7 @@ MaxJump = 15
 Shields = 30
 Damage = 25
 Maneuver = 30
+Size = "Medium"
 
 [Ships.Hornet]
 Hull = 150
@@ -47,6 +52,8 @@ MaxJump = 16
 Shields = 30
 Damage = 45
 Maneuver = 55
+Size = "Medium"
+
 
 [Ships.Beetle]
 Hull = 100
@@ -55,13 +62,4 @@ MaxJump = 14
 Shields = 25
 Damage = 25
 Maneuver = 35
-
-# Ship prices
-[Ships.Prices]
-Flea = 500
-Gnat = 1000
-Firefly = 2000
-Mosquito = 3000
-Bumblebee = 4500
-Hornet = 6000
-Beetle = 5500
+Size = "Medium"
