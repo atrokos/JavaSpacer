@@ -2,11 +2,13 @@ package cz.cuni.mff.pijalekj;
 
 public class GameClock {
     private long ticks = 0;
-    private final long BIGTICK;
+    private final static long BIGTICK = 14;
 
-    public GameClock(long ticks, long bigTick) {
+    public GameClock(long ticks) {
         this.ticks = ticks;
-        this.BIGTICK = bigTick;
+    }
+    public GameClock() {
+        this.ticks = 0;
     }
 
     public boolean tick() {

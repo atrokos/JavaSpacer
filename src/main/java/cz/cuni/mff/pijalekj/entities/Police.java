@@ -39,6 +39,7 @@ public class Police extends Entity {
 
     @Override
     public void play() {
+        System.out.println("Police is playing!");
         if (!this.isAlive()) {
             return;
         }
@@ -58,7 +59,7 @@ public class Police extends Entity {
                 var victim = entityManager.getEntity(criminal.getAsInt());
                 prevAction = EntityActions.battle;
                 Battle.fight(this, victim);
-
+                System.out.println("Fought against a criminal!");
                 if (!this.isAlive()) {
                     return;
                 }

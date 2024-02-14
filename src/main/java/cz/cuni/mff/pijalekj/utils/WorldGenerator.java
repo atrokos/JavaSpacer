@@ -1,8 +1,13 @@
 package cz.cuni.mff.pijalekj.utils;
 
 import com.moandjiezana.toml.Toml;
+import cz.cuni.mff.pijalekj.builders.EntityBuilder;
 import cz.cuni.mff.pijalekj.builders.PlanetBuilder;
+import cz.cuni.mff.pijalekj.entities.Entity;
 import cz.cuni.mff.pijalekj.entities.Planet;
+import cz.cuni.mff.pijalekj.enums.EntityType;
+import cz.cuni.mff.pijalekj.managers.CriminalsManager;
+import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.LocationsManager;
 
 import java.io.File;
@@ -28,7 +33,7 @@ public class WorldGenerator {
     }
 
     private static Planet[] generatePlanets(int size) {
-        return IntStream.rangeClosed(0, size)
+        return IntStream.range(0, size)
                 .mapToObj(PlanetBuilder::randomPlanet)
                 .toArray(Planet[]::new);
     }
@@ -41,6 +46,9 @@ public class WorldGenerator {
 
         for (int ID = 0; ID < size; ++ID) {
             presentEntities.add(new ArrayList<>(size));
+            for (int ID2 = 0; ID2 < size; ++ID2) {
+                presentEntities.get(ID).add(new HashSet<>());
+            }
             neighborList.add(new HashSet<>());
 
             if (ID != 0) {
@@ -80,5 +88,26 @@ public class WorldGenerator {
         neighbors.get(planet1ID).add(planet2ID);
     }
 
+    public static void generateEntities(LocationsManager lm, EntityManager em, CriminalsManager cm) {
+        ArrayList<Entity> entities = new ArrayList<>();
+        int noOfPlanets = lm.getAllPlanets().length;
+        EntityBuilder eb = new EntityBuilder(em, lm, cm);
+//        em.addEntity(eb.newEntity(0, noOfPlanets/2, EntityType.Player));
 
+        int idCounter = 0; // Change to 1 after testing NPCs
+        for (int i = 0; i < noOfPlanets; ++i) {
+            em.addEntity(eb.newEntity(idCounter++, i, EntityType.Police));
+            em.addEntity(eb.newEntity(idCounter++, i, EntityType.Trader));
+            if (i % 5 == 0) {
+                em.addEntity(eb.newEntity(idCounter++, i, EntityType.Pirate));
+            }
+        }
+    }
+
+    public static void populateWorld(LocationsManager lm, EntityManager em) {
+        for (var entity : em.getEntities()) {
+            System.out.println(entity.getCurrPosition());
+            lm.addEntityTo(entity.getID(), entity.getCurrPosition());
+        }
+    }
 }

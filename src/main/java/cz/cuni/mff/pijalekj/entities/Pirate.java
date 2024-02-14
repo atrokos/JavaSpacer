@@ -41,6 +41,7 @@ public class Pirate extends Entity {
 
     @Override
     public void play() {
+        System.out.println("Pirate is playing!");
         if (!this.isAlive()) {
             return;
         }
@@ -89,7 +90,7 @@ public class Pirate extends Entity {
             ownedShip.refuel(fuelDiff);
         }
         else {
-            entityStats.credits += 10;
+            entityStats.credits += 50;
         }
 
         // Hull
@@ -97,9 +98,11 @@ public class Pirate extends Entity {
         neededCredits = fuelDiff * Constants.fuelCost;
         if (hullDiff > 0 && neededCredits <= entityStats.credits) {
             entityStats.credits -= neededCredits;
-            ownedShip.refuel(hullDiff);
+            ownedShip.repairHull(hullDiff);
         }
-        // TODO maybe add "else { + 10 }" if NPCs are too passive
+        else {
+            entityStats.credits += 50;
+        }
     }
 
     private void sell() {

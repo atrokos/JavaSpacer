@@ -1,37 +1,72 @@
 package cz.cuni.mff.pijalekj.managers;
 
+import cz.cuni.mff.pijalekj.builders.EntityBuilder;
 import cz.cuni.mff.pijalekj.entities.Entity;
+import cz.cuni.mff.pijalekj.entities.Pirate;
+import cz.cuni.mff.pijalekj.entities.Police;
+import cz.cuni.mff.pijalekj.entities.Trader;
+import cz.cuni.mff.pijalekj.enums.EntityType;
+
+import java.util.ArrayList;
+
+import static cz.cuni.mff.pijalekj.enums.EntityType.Trader;
 
 public class EntityManager {
-    private final Entity[] entities;
+    private final ArrayList<Entity> entities = new ArrayList<>();
 
-    public EntityManager(Entity[] entities) {
-        this.entities = entities;
+    public EntityManager() {
+
     }
 
     public Entity getEntity(int entityID) {
-        return entities[entityID];
+        return entities.get(entityID);
     }
 
-    public Entity[] getEntities() {
+    public ArrayList<Entity> getEntities() {
         return entities;
     }
 
     public boolean play() {
-        entities[0].play(); // Let the player play
+        entities.getFirst().play(); // Let the player play
 
-        if (!entities[0].isAlive()) { // If the player is dead, end the game
+        if (!entities.getFirst().isAlive()) { // If the player is dead, end the game
             return false;
         }
 
-        for (int i = 1; i < entities.length; ++i) { // Let the NPCs play
-            entities[i].play();
+        for (int i = 1; i < entities.size(); ++i) { // Let the NPCs play
+            entities.get(i).play();
         }
 
         return true;
     }
 
     public void resetNPCs(CriminalsManager criminalsManager, LocationsManager locationsManager) {
-        // TODO
+        EntityBuilder eb = new EntityBuilder(this, locationsManager, criminalsManager);
+        for (var entity : entities) {
+            if (entity == null) {
+                throw new RuntimeException("Fatal error: an Entity is null!");
+            }
+
+            if (!entity.isAlive()) {
+                locationsManager.removeEntityFrom(entity.getID(), entity.getCurrPosition());
+                switch (entity) {
+                    case Police police -> {
+                        entity = eb.newEntity(entity.getID(), entity.getCurrPosition(), EntityType.Police);
+                    }
+                    case Pirate pirate -> {
+                        entity = eb.newEntity(entity.getID(), entity.getCurrPosition(), EntityType.Pirate);
+                    }
+                    case Trader trader -> {
+                        entity = eb.newEntity(entity.getID(), entity.getCurrPosition(), Trader);
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + entity);
+                }
+            }
+            locationsManager.addEntityTo(entity.getID(), entity.getCurrPosition());
+        }
+    }
+
+    public void addEntity(Entity entity) {
+        entities.add(entity);
     }
 }

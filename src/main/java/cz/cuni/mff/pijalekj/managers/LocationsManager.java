@@ -91,7 +91,7 @@ public class LocationsManager {
         return planets;
     }
 
-    private void updateAllPlanets() {
+    public void updateAllPlanets() {
         Arrays.stream(planets).parallel().forEach(Planet::update);
     }
 }

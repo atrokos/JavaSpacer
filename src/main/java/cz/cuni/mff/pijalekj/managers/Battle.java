@@ -10,6 +10,7 @@ public class Battle {
     private static final Random generator = new Random();
 
     public static BattleResult fight(Entity attacker, Entity defender) {
+        System.out.println("Someone is fighting!");
         while (true) {
             var attackerAction = attacker.battle(defender);
 
@@ -38,7 +39,7 @@ public class Battle {
                     attacker.getOwnedShip().takeDamage(damageDone);
                 }
                 case flee -> {
-                    double dieThrow = generator.nextDouble(0., 101.);
+                    double dieThrow = generator.nextDouble(0., 100.);
                     if (dieThrow <= defender.getOwnedShip().getFleeChance()) {
                         return aftermath(BattleResult.defenderFled, attacker, defender);
                     }

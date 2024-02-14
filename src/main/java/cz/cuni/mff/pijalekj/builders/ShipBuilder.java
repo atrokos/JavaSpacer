@@ -16,8 +16,8 @@ public class ShipBuilder {
     }
 
     private static ShipStats buildStats(ShipType type) {
-        String baseKey = type.toString() + ".";
-        var health = new MaxValue(Constants.ships.getLong(baseKey + "Health").intValue());
+        String baseKey = "Ships." + type + ".";
+        var health = new MaxValue(Constants.ships.getLong(baseKey + "Hull").intValue());
         var cargo = new MaxValue(0, Constants.ships.getLong(baseKey + "Cargo").intValue());
         var fuel = new MaxValue( 3 * Constants.ships.getLong(baseKey + "MaxJump").intValue());
         var shields = new MaxValue(Constants.ships.getLong(baseKey + "Shields").intValue());
@@ -28,7 +28,7 @@ public class ShipBuilder {
     }
 
     private static ShipSize getShipSize(ShipType type) {
-        String key = type.toString() + ".Size";
+        String key = "Ships." + type + ".Size";
         return ShipSize.valueOf(Constants.ships.getString(key));
     }
 }

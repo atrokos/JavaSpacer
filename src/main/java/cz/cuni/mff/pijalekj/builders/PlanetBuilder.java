@@ -16,8 +16,8 @@ public class PlanetBuilder {
     public final static String[] planetNames;
 
     static {
-        try (var reader = Files.newBufferedReader(Path.of("./data/PlanetNames.txt"), StandardCharsets.UTF_8)) {
-            planetNames = (String[]) reader.lines().toArray();
+        try (var reader = Files.newBufferedReader(Path.of("./src/data/PlanetNames.txt"), StandardCharsets.UTF_8)) {
+            planetNames = reader.lines().toArray(String[]::new);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

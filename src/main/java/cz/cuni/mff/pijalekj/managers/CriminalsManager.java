@@ -5,15 +5,9 @@ import cz.cuni.mff.pijalekj.utils.Constants;
 import java.util.HashMap;
 
 public class CriminalsManager {
-    HashMap<Long, Integer> criminals;
+    HashMap<Long, Integer> criminals = new HashMap<>();
 
-    public CriminalsManager() {
-        this.criminals = new HashMap<>();
-    }
-
-    public CriminalsManager(HashMap<Long, Integer> criminals) {
-        this.criminals = criminals;
-    }
+    public CriminalsManager() {}
 
     public boolean isCriminal(long entityID) {
         return criminals.containsKey(entityID);

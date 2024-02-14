@@ -6,3 +6,15 @@ Mosquito = 3000
 Bumblebee = 4500
 Hornet = 6000
 Beetle = 5500
+
+[Entities.DefaultShips]
+Player = "Gnat"
+Pirate = "Mosquito"
+Trader = "Beetle"
+Police = "Hornet"
+
+[Entities.StartCredits]
+Player = 1000
+Pirate = 2000
+Trader = 2500
+Police = 0

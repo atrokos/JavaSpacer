@@ -19,10 +19,10 @@ public class Ship {
     }
 
     public void refuel(int capacity) {
-        if (capacity < this.shipStats.fuel.getCurr()) {
-            throw new IllegalArgumentException("Ship has more fuel than what it was given.");
+        if (capacity + this.shipStats.fuel.getCurr() > this.shipStats.fuel.getMax()) {
+            throw new IllegalArgumentException("Ship was told to refuel more than it can store.");
         }
-        this.shipStats.fuel.setCurr(capacity);
+        this.shipStats.fuel.changeBy(capacity);
     }
 
     public void refuel() {
@@ -48,7 +48,10 @@ public class Ship {
     }
 
     public void repairHull(int newHealth){
-        shipStats.health.setCurr(newHealth);
+        if (newHealth + this.shipStats.health.getCurr() > this.shipStats.health.getMax()) {
+            throw new IllegalArgumentException("Ship was told to repair more than it can be.");
+        }
+        shipStats.health.changeBy(newHealth);
     }
 
     public void repairHull() {

@@ -7,10 +7,10 @@ import cz.cuni.mff.pijalekj.enums.PlanetIndustryType;
 import java.util.Random;
 
 public class Planet {
-    protected final String name;
-    protected final long planetID;
-    protected GoodsPrices goodsPrices;
-    protected final PlanetIndustryType planetType;
+    private final String name;
+    private final long planetID;
+    private GoodsPrices goodsPrices;
+    private final PlanetIndustryType planetType;
     public Planet(String name, PlanetIndustryType planetType, long planetID, GoodsPrices goodsPrices) {
         this.name = name;
         this.planetID = planetID;

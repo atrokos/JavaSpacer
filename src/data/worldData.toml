@@ -2,6 +2,6 @@
 Min = 13
 Max = 20
 
-[NeighborCount]
+[NeighbourCount]
 Min = 1
 Max = 5
