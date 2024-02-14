@@ -151,7 +151,7 @@ public class Trader extends Entity {
 
         int credits = entityStats.credits;
         int freeSpace = ownedShip.getStats().cargo.getMax() - ownedShip.getStats().cargo.getCurr();
-        for (var key : goodsDiff.keySet()) {
+        for (var key : goodsDiff.reversed().keySet()) {
             int index = 0;
             try {
                 index = goodsDiff.get(key);
@@ -162,7 +162,8 @@ public class Trader extends Entity {
             }
             int available = currPlanetGoodsPrices.goods[index];
             int affordable = credits / currPlanetGoodsPrices.prices[index];
-            int buyable = Math.min(available, affordable);
+            // limit one commodity to 10 pieces max, so that traders won't buy the best one out
+            int buyable = Math.min(10, Math.min(available, affordable));
 
             if (freeSpace - buyable <= 0) {
                 toBuy[index] = freeSpace;
