@@ -18,14 +18,14 @@ public class Ship {
                 (0.8 * Math.pow(shipStats.maneuver / 100.0, 2) + 0.2) * 100;
     }
 
-    void refuel(int capacity) {
+    public void refuel(int capacity) {
         if (capacity < this.shipStats.fuel.getCurr()) {
             throw new IllegalArgumentException("Ship has more fuel than what it was given.");
         }
         this.shipStats.fuel.setCurr(capacity);
     }
 
-    void refuel() {
+    public void refuel() {
         shipStats.fuel.setToMax();
     }
 
@@ -65,6 +65,10 @@ public class Ship {
 
     public ShipStats getShipStats() {
         return shipStats;
+    }
+
+    public double getFleeChance() {
+        return shipStats.fleeChance;
     }
 
     public static int damageOutput(Ship attacker, Ship defender) {

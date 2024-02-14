@@ -1,7 +1,7 @@
 package cz.cuni.mff.pijalekj.entities;
 
 public class EntityStats {
-    public long credits = 0;
+    public long credits;
     public int[] ownedGoods;
 
     public EntityStats(long credits, int[] ownedGoods) {

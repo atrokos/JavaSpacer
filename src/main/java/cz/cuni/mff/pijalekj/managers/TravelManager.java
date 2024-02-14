@@ -28,7 +28,7 @@ public class TravelManager {
         }
     }
 
-    private void travelStart(int nextLocationID) {
+    public void travelStart(int nextLocationID) {
         this.nextLocID = nextLocationID;
         this.travelTimeLeft = locMan.getDistanceBetween(this.currLocID, this.nextLocID);
         if (this.travelTimeLeft <= 0) {
@@ -65,6 +65,10 @@ public class TravelManager {
 
     public HashSet<Integer> getNeighbors(int planetID) {
         return this.locMan.getNeighbors(planetID);
+    }
+
+    public HashSet<Integer> getNeighbors() {
+        return getNeighbors(currLocID);
     }
 
     public Planet getCurrLocation() {

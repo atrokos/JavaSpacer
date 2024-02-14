@@ -2,18 +2,20 @@ package cz.cuni.mff.pijalekj.managers;
 
 import cz.cuni.mff.pijalekj.entities.Planet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 public class LocationsManager {
-    private ArrayList<ArrayList<Integer>> adjacencyMatrix;
-    private ArrayList<ArrayList<HashSet<Integer>>> presentEntities;
-    private ArrayList<HashSet<Integer>> neighborList;
-    private ArrayList<Planet> planets;
+    private final int[][] adjacencyMatrix;
+    private final List<List<HashSet<Integer>>> presentEntities;
+    private final List<HashSet<Integer>> neighborList;
+    private final Planet[] planets;
 
-    public LocationsManager(ArrayList<ArrayList<Integer>> adjacencyMatrix,
-                            ArrayList<ArrayList<HashSet<Integer>>> presentEntities,
-                            ArrayList<HashSet<Integer>> neighborList,
-                            ArrayList<Planet> planets)
+    public LocationsManager(int[][] adjacencyMatrix,
+                            List<List<HashSet<Integer>>> presentEntities,
+                            List<HashSet<Integer>> neighborList,
+                            Planet[] planets)
     {
         this.adjacencyMatrix = adjacencyMatrix;
         this.presentEntities = presentEntities;
@@ -26,17 +28,17 @@ public class LocationsManager {
     }
 
     public boolean isNeighborOf(int planetID1, int planetID2) {
-        if (planetID1 > adjacencyMatrix.size() || planetID2 > adjacencyMatrix.getFirst().size()) {
+        if (planetID1 > adjacencyMatrix.length || planetID2 > adjacencyMatrix[0].length) {
             throw new IllegalArgumentException("Adjacency matrix was given incorrect ID(s)");
         }
-        return adjacencyMatrix.get(planetID1).get(planetID2) > 0;
+        return adjacencyMatrix[planetID1][planetID2] > 0;
     }
 
     public int getDistanceBetween(int planetIDFrom, int planetIDTo) {
-        if (planetIDFrom > adjacencyMatrix.size() || planetIDTo > adjacencyMatrix.getFirst().size())
+        if (planetIDFrom > adjacencyMatrix.length || planetIDTo > adjacencyMatrix[0].length)
             throw new IllegalArgumentException("Adjacency matrix was given incorrect ID(s)");
 
-        return adjacencyMatrix.get(planetIDFrom).get(planetIDTo);
+        return adjacencyMatrix[planetIDFrom][planetIDTo];
     }
 
     public void addEntityTo(int entityID, int planetIDFrom, int planetIDTo) {
@@ -79,17 +81,17 @@ public class LocationsManager {
     }
 
     public Planet getPlanet(int planetID) {
-        if (planetID >= planets.size()) // NOTE Originally was ">", replace it if a bug occurs
+        if (planetID >= planets.length) // NOTE Originally was ">", replace it if a bug occurs
             throw new IllegalArgumentException("LocationsManager was given an incorrect planetID!");
 
-        return planets.get(planetID);
+        return planets[planetID];
     }
 
-    public ArrayList<Planet> getAllPlanets() {
+    public Planet[] getAllPlanets() {
         return planets;
     }
 
     private void updateAllPlanets() {
-        planets.stream().parallel().forEach(Planet::update);
+        Arrays.stream(planets).parallel().forEach(Planet::update);
     }
 }

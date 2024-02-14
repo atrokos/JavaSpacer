@@ -1,4 +1,4 @@
-package cz.cuni.mff.pijalekj.Builders;
+package cz.cuni.mff.pijalekj.builders;
 
 import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.ShipSize;

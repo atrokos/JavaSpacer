@@ -1,0 +1,7 @@
+[Distances]
+Min = 13
+Max = 20
+
+[NeighborCount]
+Min = 1
+Max = 5

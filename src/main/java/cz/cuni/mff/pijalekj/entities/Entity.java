@@ -68,11 +68,11 @@ public abstract class Entity implements BattleReady {
     }
 
     public int getCurrPosition() {
-        return travelManager.getCurrPosition();
+        return travelManager.getCurrLocationID();
     }
 
     public int getNextPosition() {
-        return travelManager.getNextPosition();
+        return travelManager.getNextLocationID();
     }
 
     public int getID() {
@@ -87,7 +87,7 @@ public abstract class Entity implements BattleReady {
         return travelManager.isTraveling();
     }
 
-    private void takeAll(Entity opponent) {
+    protected void takeAll(Entity opponent) {
         if (opponent.isEmpty() || opponent.isAlive()) {
             return;
         }
@@ -108,12 +108,12 @@ public abstract class Entity implements BattleReady {
         }
     }
 
-    private void travel() {
+    protected void travel() {
         ownedShip.getShipStats().fuel.changeBy(-1);
         travelManager.travel();
     }
 
-    private int outSustain(Entity victim) {
+    protected int outSustain(Entity victim) {
         var myHealth = this.ownedShip.getShipStats().health.getCurr() +
                 this.ownedShip.getShipStats().shields.getCurr();
         var victimHealth = victim.ownedShip.getShipStats().health.getCurr() +
