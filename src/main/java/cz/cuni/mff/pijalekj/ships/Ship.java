@@ -63,7 +63,7 @@ public class Ship {
         return shipType;
     }
 
-    public ShipStats getShipStats() {
+    public ShipStats getStats() {
         return shipStats;
     }
 

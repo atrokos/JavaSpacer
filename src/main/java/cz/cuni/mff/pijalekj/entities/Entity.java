@@ -1,14 +1,11 @@
 package cz.cuni.mff.pijalekj.entities;
 
-import cz.cuni.mff.pijalekj.enums.BattleActionType;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
 import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.TravelManager;
 import cz.cuni.mff.pijalekj.ships.Ship;
-
-import javax.swing.border.EmptyBorder;
 
 public abstract class Entity implements BattleReady {
     protected TravelManager travelManager;
@@ -50,21 +47,21 @@ public abstract class Entity implements BattleReady {
     public abstract void play();
 
     public boolean isAlive() {
-        return ownedShip.getShipStats().health.getCurr() > 0;
+        return ownedShip.getStats().health.getCurr() > 0;
     }
 
     public boolean isEmpty() {
-        return ownedShip.getShipStats().cargo.getCurr() == 0;
+        return ownedShip.getStats().cargo.getCurr() == 0;
     }
 
     public void changeGoodsBy(GoodsIndex type, int number) {
         entityStats.ownedGoods[type.ordinal()] += number;
-        ownedShip.getShipStats().cargo.changeBy(number);
+        ownedShip.getStats().cargo.changeBy(number);
     }
 
     public void changeGoodsBy(int type, int number) {
         entityStats.ownedGoods[type] += number;
-        ownedShip.getShipStats().cargo.changeBy(number);
+        ownedShip.getStats().cargo.changeBy(number);
     }
 
     public int getCurrPosition() {
@@ -80,7 +77,7 @@ public abstract class Entity implements BattleReady {
     }
 
     public void kill() {
-        ownedShip.getShipStats().health.setCurr(0);
+        ownedShip.getStats().health.setCurr(0);
     }
 
     public boolean isTraveling() {
@@ -92,32 +89,32 @@ public abstract class Entity implements BattleReady {
             return;
         }
 
-        int maxCapacity = ownedShip.getShipStats().cargo.getMax();
+        int maxCapacity = ownedShip.getStats().cargo.getMax();
         var opGoods = opponent.entityStats.ownedGoods;
 
         for (int i = 0; i < opGoods.length; ++i) {
-            int diff = maxCapacity - opGoods[i] - ownedShip.getShipStats().cargo.getCurr();
+            int diff = maxCapacity - opGoods[i] - ownedShip.getStats().cargo.getCurr();
             if (diff >= 0) {
                 changeGoodsBy(i, opGoods[i]);
                 opponent.changeGoodsBy(i, -opGoods[i]);
             }
             else {
-                changeGoodsBy(i, ownedShip.getShipStats().cargo.getCurr());
-                opponent.changeGoodsBy(i, -ownedShip.getShipStats().cargo.getCurr());
+                changeGoodsBy(i, ownedShip.getStats().cargo.getCurr());
+                opponent.changeGoodsBy(i, -ownedShip.getStats().cargo.getCurr());
             }
         }
     }
 
     protected void travel() {
-        ownedShip.getShipStats().fuel.changeBy(-1);
+        ownedShip.getStats().fuel.changeBy(-1);
         travelManager.travel();
     }
 
     protected int outSustain(Entity victim) {
-        var myHealth = this.ownedShip.getShipStats().health.getCurr() +
-                this.ownedShip.getShipStats().shields.getCurr();
-        var victimHealth = victim.ownedShip.getShipStats().health.getCurr() +
-                victim.ownedShip.getShipStats().shields.getCurr();
+        var myHealth = this.ownedShip.getStats().health.getCurr() +
+                this.ownedShip.getStats().shields.getCurr();
+        var victimHealth = victim.ownedShip.getStats().health.getCurr() +
+                victim.ownedShip.getStats().shields.getCurr();
 
         var attackerDamage = Ship.damageOutput(ownedShip, victim.ownedShip);
         var victimDamage = Ship.damageOutput(victim.ownedShip, ownedShip);

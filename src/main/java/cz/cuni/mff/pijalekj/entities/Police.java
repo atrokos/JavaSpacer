@@ -67,6 +67,7 @@ public class Police extends Entity {
         }
 
         // This NPC is at a planet. Do maintenance and sell all confiscated goods (if any).
+        prevAction = EntityActions.maintenance;
         maintenance();
         if (!this.isEmpty()) {
             sell();
@@ -91,16 +92,18 @@ public class Police extends Entity {
     }
 
     private void maintenance() {
+        // Shields always recharge when at a planet
+        ownedShip.rechargeShields();
         ownedShip.repairHull();
         ownedShip.refuel();
-        prevAction = EntityActions.maintenance;
     }
 
     private void sell() {
         var currPlanet = travelManager.getCurrLocation();
         for (var goodIndex : GoodsIndex.values()) {
-            entityStats.credits += currPlanet.sell(goodIndex.ordinal(), entityStats.ownedGoods[goodIndex.ordinal()]);
-            entityStats.ownedGoods[goodIndex.ordinal()] = 0;
+            int index = goodIndex.ordinal();
+            entityStats.credits += currPlanet.sell(index, entityStats.ownedGoods[index]);
+            changeGoodsBy(index, -entityStats.ownedGoods[index]);
         }
     }
 
