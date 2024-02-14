@@ -21,6 +21,7 @@ public class Game {
         if (clock.tick()) {
             entityManager.resetNPCs(criminalsManager, locationsManager);
             locationsManager.updateAllPlanets();
+            locationsManager.bigCheck(entityManager.getEntities().size());
         }
 
         boolean state = entityManager.play();

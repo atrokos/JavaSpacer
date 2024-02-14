@@ -94,4 +94,25 @@ public class LocationsManager {
     public void updateAllPlanets() {
         Arrays.stream(planets).parallel().forEach(Planet::update);
     }
+
+    public void bigCheck(int numOfEntities) {
+        // Check that all planets know their neighbors
+        for (int i = 0; i < adjacencyMatrix.length; ++i) {
+            for (int j = 0; j < adjacencyMatrix[0].length; ++j) {
+                assert adjacencyMatrix[i][j] == adjacencyMatrix[j][i];
+            }
+        }
+
+        // Check that every entity is present exactly once
+        HERE: for (int ID = 0; ID < numOfEntities; ++ID) {
+            for (int i = 0; i < adjacencyMatrix.length; ++i) {
+                for (int j = 0; j < adjacencyMatrix[0].length; ++j) {
+                    if (presentEntities.get(i).get(j).contains(ID)) {
+                        continue HERE;
+                    }
+                }
+            }
+            throw new RuntimeException("Entity with ID " + ID + " was not found!");
+        }
+    }
 }
