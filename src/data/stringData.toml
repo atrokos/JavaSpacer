@@ -1,0 +1,34 @@
+[Options]
+Welcome = [
+    "Buy/sell goods",
+    "Travel",
+    "Manage ship",
+    "Seek market"
+]
+
+MetShip = [
+    "Ignore it",
+    "Attack it"
+]
+
+[Errors]
+InsuffCredits.msg = "You don't have enough credits!"
+InsuffCredits.col = "Yellow"
+
+NotEnoughSpace.msg = "There is not enough space on your ship!"
+NotEnoughSpace.col = "Yellow"
+
+[Statistics]
+Ship = [
+    "Hull:",
+    "Shields:",
+    "Cargo:",
+    "Fuel:",
+    "Type:"
+]
+
+[Screens]
+Welcome = "Welcome to SpaceTrader, v0.5.0!\nCurrently, this game does not support saving and loading."
+
+[Other]
+AnyKey = "Press any key to continue...\n"

@@ -92,9 +92,9 @@ public class WorldGenerator {
         ArrayList<Entity> entities = new ArrayList<>();
         int noOfPlanets = lm.getAllPlanets().length;
         EntityBuilder eb = new EntityBuilder(em, lm, cm);
-//        em.addEntity(eb.newEntity(0, noOfPlanets/2, EntityType.Player));
+        em.addEntity(eb.newEntity(0, noOfPlanets/2, EntityType.Player));
 
-        int idCounter = 0; // Change to 1 after testing NPCs
+        int idCounter = 1; // Change to 1 after testing NPCs
         for (int i = 0; i < noOfPlanets; ++i) {
             em.addEntity(eb.newEntity(idCounter++, i, EntityType.Police));
             em.addEntity(eb.newEntity(idCounter++, i, EntityType.Trader));

@@ -36,11 +36,8 @@ public class EntityBuilder {
         var prevAction = EntityActions.none;
 
         return switch (type) {
-            case Player -> {
-                String name = "Test";
-                yield new Player(travelManager, entityManager, criminalsManager,
-                        ship, stats, prevAction, ID, name);
-            }
+            case Player -> new Player(travelManager, entityManager, criminalsManager,
+                        ship, stats, prevAction, ID, "NOTSET");
             case Pirate -> new Pirate(travelManager, entityManager, criminalsManager,
                     ship, stats, prevAction, ID);
             case Trader -> new Trader(travelManager, entityManager, criminalsManager,

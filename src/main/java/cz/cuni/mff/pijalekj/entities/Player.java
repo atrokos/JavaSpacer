@@ -8,7 +8,7 @@ import cz.cuni.mff.pijalekj.managers.TravelManager;
 import cz.cuni.mff.pijalekj.ships.Ship;
 
 public class Player extends Entity {
-    private final String name;
+    private String name;
     public Player(TravelManager travelManager, EntityManager entityManager, CriminalsManager criminalsManager,
                   Ship ownedShip, EntityStats entityStats, EntityActions prevAction, int entityID, String name) {
         super(travelManager, entityManager, criminalsManager, ownedShip, entityStats, prevAction, entityID);
@@ -34,5 +34,9 @@ public class Player extends Entity {
     @Override
     public void play() {
 
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

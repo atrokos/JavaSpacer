@@ -9,6 +9,7 @@ public class Constants {
     public final static Toml entities = new Toml().read(new File("./src/data/entityNumbers.toml"));
     public final static Toml ships = new Toml().read(new File("./src/data/shipNumbers.toml"));
     public final static Toml builders = new Toml().read(new File("./src/data/builderData.toml"));
+    public final static Toml strings = new Toml().read(new File("./src/data/stringData.toml"));
     public final static int fuelCost = 3;
     public final static int repairCost = 5;
 }

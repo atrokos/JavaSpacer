@@ -1,10 +1,7 @@
 package cz.cuni.mff.pijalekj.managers;
 
 import cz.cuni.mff.pijalekj.builders.EntityBuilder;
-import cz.cuni.mff.pijalekj.entities.Entity;
-import cz.cuni.mff.pijalekj.entities.Pirate;
-import cz.cuni.mff.pijalekj.entities.Police;
-import cz.cuni.mff.pijalekj.entities.Trader;
+import cz.cuni.mff.pijalekj.entities.*;
 import cz.cuni.mff.pijalekj.enums.EntityType;
 
 import java.util.ArrayList;
@@ -24,6 +21,10 @@ public class EntityManager {
 
     public ArrayList<Entity> getEntities() {
         return entities;
+    }
+
+    public Player getPlayer() {
+        return (Player) entities.getFirst();
     }
 
     public boolean play() {

@@ -28,4 +28,16 @@ public class Game {
         criminalsManager.updateCriminals();
         return state;
     }
+
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    public LocationsManager getLocationsManager() {
+        return locationsManager;
+    }
+
+    public GameClock getClock() {
+        return clock;
+    }
 }
