@@ -19,9 +19,7 @@ public class MaxValue {
     }
 
     public void setCurr(int value) throws IllegalArgumentException {
-        if (value > max) {
-            throw new IllegalArgumentException("Tuple was given higher value than its maximum.");
-        }
+        assert value <= max: "Tuple was given higher value than its maximum.";
         curr = value;
     }
 
@@ -34,6 +32,7 @@ public class MaxValue {
     }
 
     public void changeBy(int value) {
+        assert curr + value <= max;
         curr += value;
     }
 

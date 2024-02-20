@@ -1,6 +1,6 @@
 package cz.cuni.mff.pijalekj.ui;
 public class ColorConsole {
-    private static final String ESC = "\033[";
+    private static final String ESC = "\\033[";
     private static final String FORE = "38;5;";
     private static final String BACK = "48;5;";
     private static final String CLEAR = "J";

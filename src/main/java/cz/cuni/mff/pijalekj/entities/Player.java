@@ -7,6 +7,8 @@ import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.TravelManager;
 import cz.cuni.mff.pijalekj.ships.Ship;
 
+import static org.fusesource.jansi.Ansi.*;
+
 public class Player extends Entity {
     private String name;
     public Player(TravelManager travelManager, EntityManager entityManager, CriminalsManager criminalsManager,
@@ -33,7 +35,32 @@ public class Player extends Entity {
 
     @Override
     public void play() {
+        if (!this.isAlive()) {
+            return;
+        }
 
+        if (this.travelManager.isTraveling()) {
+            if (prevAction != EntityActions.scan) {
+                this.battleTraveling();
+                return;
+            }
+            this.travel();
+        }
+
+
+    }
+
+    private void battleTraveling() {
+        var chosenEntity = this.travelManager.getPresentEntities().stream()
+                .filter(ID -> ID != this.entityID)
+                .findFirst();
+        if (chosenEntity.isEmpty()) {
+            return;
+        }
+
+        System.out.print(ansi().eraseScreen());
+        System.out.print(ansi().a("While traveling, you meet a ship:\n"));
+        // TODO rest
     }
 
     public void setName(String name) {

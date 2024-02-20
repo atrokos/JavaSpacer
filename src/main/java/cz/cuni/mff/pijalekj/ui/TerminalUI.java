@@ -3,26 +3,25 @@ package cz.cuni.mff.pijalekj.ui;
 import cz.cuni.mff.pijalekj.Game;
 
 import java.io.Console;
+import java.io.IOException;
 import java.util.List;
 
 public class TerminalUI implements EventUI {
     Game game;
-    Console console = System.console();
 
-    public TerminalUI(Game game) {
+    public TerminalUI(Game game) throws IOException {
         this.game = game;
+
     }
 
     @Override
-    public void askPlayerName() {
-        console.printf("Enter player name: ");
+    public void askPlayerName() throws IOException {
     }
 
     @Override
     public void showOptions(List<String> options) {
         int counter = 0;
         for (String item : options) {
-            console.printf("%d) %s\n", counter, item);
             ++counter;
         }
     }
@@ -54,11 +53,11 @@ public class TerminalUI implements EventUI {
 
     @Override
     public void showWelcomeScreen() {
-        console.printf();
+
 
     }
 
     public void anyKey() {
-        console.printf("Press any key to continue...");
+
     }
 }

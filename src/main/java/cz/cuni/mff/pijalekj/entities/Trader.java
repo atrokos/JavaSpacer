@@ -26,8 +26,7 @@ public class Trader extends Entity {
     @Override
     public void won(Entity opponent) {
         takeAll(opponent);
-        entityStats.credits += opponent.getEntityStats().credits;
-        opponent.getEntityStats().credits = 0;
+        this.entityStats.transferAllCredits(opponent.entityStats);
     }
 
     @Override
@@ -79,8 +78,8 @@ public class Trader extends Entity {
 
         for (var goodIndex : GoodsIndex.values()) {
             int index = goodIndex.ordinal();
-            entityStats.credits -= currPlanet.buy(index, results.toBuy[index]);
-            changeGoodsBy(index, results.toBuy[index]);
+            this.entityStats.removeCredits(currPlanet.buy(index, results.toBuy[index]));
+            this.entityStats.addGood(index, results.toBuy[index]);
         }
 
         results.path.removeFirst();
@@ -140,7 +139,7 @@ public class Trader extends Entity {
 
         for (var goodIndex : GoodsIndex.values()) {
             int index = goodIndex.ordinal();
-            int priceDiff = planetGoodsPrices.prices[index] - currPlanetGoodsPrices.prices[index];
+            int priceDiff = planetGoodsPrices.getPrice(index) - currPlanetGoodsPrices.getPrice(index);
 
             while (goodsDiff.containsKey(priceDiff)) {
                 --priceDiff;
@@ -149,8 +148,8 @@ public class Trader extends Entity {
                 goodsDiff.put(priceDiff, index);
         }
 
-        int credits = entityStats.credits;
-        int freeSpace = ownedShip.getStats().cargo.getMax() - ownedShip.getStats().cargo.getCurr();
+        int credits = entityStats.getCredits();
+        int freeSpace = ownedShip.getStats().maxCargo - entityStats.getTotalGoodsAmount();
         for (var key : goodsDiff.reversed().keySet()) {
             int index = 0;
             try {
@@ -160,8 +159,8 @@ public class Trader extends Entity {
                 System.out.println("Key: " + key);
                 throw new RuntimeException();
             }
-            int available = currPlanetGoodsPrices.goods[index];
-            int affordable = credits / currPlanetGoodsPrices.prices[index];
+            int available = currPlanetGoodsPrices.getGoodAmount(index);
+            int affordable = credits / currPlanetGoodsPrices.getPrice(index);
             // limit one commodity to 10 pieces max, so that traders won't buy the best one out
             int buyable = Math.min(10, Math.min(available, affordable));
 
@@ -174,45 +173,10 @@ public class Trader extends Entity {
             toBuy[index] = buyable;
             rating += buyable * key;
             freeSpace -= buyable;
-            credits -= buyable * currPlanetGoodsPrices.prices[index];
+            credits -= buyable * currPlanetGoodsPrices.getPrice(index);
         }
 
         return new RatingBuy(rating, toBuy);
-    }
-
-    private void sell() {
-        var currPlanet = travelManager.getCurrLocation();
-        for (var goodIndex : GoodsIndex.values()) {
-            int index = goodIndex.ordinal();
-            entityStats.credits += currPlanet.sell(index, entityStats.ownedGoods[index]);
-            changeGoodsBy(index, -entityStats.ownedGoods[index]);
-        }
-    }
-
-    private void maintenance() {
-        // Shields always recharge when at a planet
-        ownedShip.rechargeShields();
-
-        // Fuel
-        int fuelDiff = ownedShip.getStats().fuel.getMax() - ownedShip.getStats().fuel.getCurr();
-        int neededCredits = fuelDiff * Constants.fuelCost;
-
-        if (fuelDiff > 0 && neededCredits <= entityStats.credits) {
-            entityStats.credits -= neededCredits;
-            ownedShip.refuel(fuelDiff);
-        }
-        else {
-            entityStats.credits += 10;
-        }
-
-        // Hull
-        int hullDiff = ownedShip.getStats().health.getMax() - ownedShip.getStats().health.getCurr();
-        neededCredits = fuelDiff * Constants.fuelCost;
-        if (hullDiff > 0 && neededCredits <= entityStats.credits) {
-            entityStats.credits -= neededCredits;
-            ownedShip.repairHull(hullDiff);
-        }
-        // TODO maybe add "else { + 10 }" if NPCs are too passive
     }
 
     private record TraderPlan(LinkedList<Integer> path, int rating, int[] toBuy) {}

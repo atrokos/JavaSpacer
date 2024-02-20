@@ -1,11 +1,12 @@
-package cz.cuni.mff.pijalekj;
+package cz.cuni.mff.pijalekj.main;
 
+import cz.cuni.mff.pijalekj.Game;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
 import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.LocationsManager;
 import cz.cuni.mff.pijalekj.utils.WorldGenerator;
 
-public class Main {
+public class MainNPCsOnly {
     public static void main(String[] args) {
         EntityManager em = new EntityManager();
         LocationsManager lm = WorldGenerator.generateLocations(500);

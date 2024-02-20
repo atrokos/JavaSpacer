@@ -30,8 +30,7 @@ public class Pirate extends Entity {
     @Override
     public void won(Entity opponent) {
         takeAll(opponent);
-        entityStats.credits += opponent.getEntityStats().credits;
-        opponent.getEntityStats().credits = 0;
+        this.entityStats.transferAllCredits(opponent.entityStats);
     }
 
     @Override
@@ -75,43 +74,6 @@ public class Pirate extends Entity {
 
         prevAction = EntityActions.travelPrep;
         travelManager.travelStart(neighbors[randomIndex]);
-    }
-
-    private void maintenance() {
-        // Shields always recharge when at a planet
-        ownedShip.rechargeShields();
-
-        // Fuel
-        int fuelDiff = ownedShip.getStats().fuel.getMax() - ownedShip.getStats().fuel.getCurr();
-        int neededCredits = fuelDiff * Constants.fuelCost;
-
-        if (fuelDiff > 0 && neededCredits <= entityStats.credits) {
-            entityStats.credits -= neededCredits;
-            ownedShip.refuel(fuelDiff);
-        }
-        else {
-            entityStats.credits += 50;
-        }
-
-        // Hull
-        int hullDiff = ownedShip.getStats().health.getMax() - ownedShip.getStats().health.getCurr();
-        neededCredits = fuelDiff * Constants.fuelCost;
-        if (hullDiff > 0 && neededCredits <= entityStats.credits) {
-            entityStats.credits -= neededCredits;
-            ownedShip.repairHull(hullDiff);
-        }
-        else {
-            entityStats.credits += 50;
-        }
-    }
-
-    private void sell() {
-        var currPlanet = travelManager.getCurrLocation();
-        for (var goodIndex : GoodsIndex.values()) {
-            int index = goodIndex.ordinal();
-            entityStats.credits += currPlanet.sell(index, entityStats.ownedGoods[index]);
-            changeGoodsBy(index, -entityStats.ownedGoods[index]);
-        }
     }
 
     private void findVictim() {

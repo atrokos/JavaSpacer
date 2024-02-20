@@ -12,11 +12,9 @@ MetShip = [
 ]
 
 [Errors]
-InsuffCredits.msg = "You don't have enough credits!"
-InsuffCredits.col = "Yellow"
+InsuffCredits = "You don't have enough credits!"
 
-NotEnoughSpace.msg = "There is not enough space on your ship!"
-NotEnoughSpace.col = "Yellow"
+NotEnoughSpace = "There is not enough space on your ship!"
 
 [Statistics]
 Ship = [

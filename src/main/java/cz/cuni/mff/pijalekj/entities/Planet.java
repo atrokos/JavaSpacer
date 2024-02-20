@@ -4,12 +4,14 @@ import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.enums.PlanetIndustryType;
 
+import java.util.Arrays;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 public class Planet {
     private final String name;
     private final long planetID;
-    private GoodsPrices goodsPrices;
+    private final GoodsPrices goodsPrices;
     private final PlanetIndustryType planetType;
     public Planet(String name, PlanetIndustryType planetType, long planetID, GoodsPrices goodsPrices) {
         this.name = name;
@@ -33,62 +35,49 @@ public class Planet {
     // Good - the good to be bought from the planet; amount - how many to buy;
     // returns the final price (positive)
     public int buy(int good, int amount) {
-        var goods = goodsPrices.goods;
-        var prices = goodsPrices.prices;
-
-        if (goods[good] < amount) {
-            throw new IllegalArgumentException("Planet " + getName() + "does not have enough of the commodity!");
-        }
-        goods[good] -= amount;
-        return amount * prices[good];
+        goodsPrices.removeGood(good, amount);
+        return amount * goodsPrices.getPrice(good);
     }
 
     // Good - the good to be sold to the planet; amount - how many to sell
     // Returns the final cost (positive)
     public int sell(int good, int amount) {
-        var goods = goodsPrices.goods;
-        var prices = goodsPrices.prices;
-
-        goods[good] += amount;
-        return amount * prices[good];
+        goodsPrices.addGood(good, amount);
+        return amount * goodsPrices.getPrice(good);
     }
     public void update() {
         updateIndustry();
         updateItems();
         updatePrices();
     }
+
     private void updateIndustry() {
-        var goods = goodsPrices.goods;
         String baseKey = getPlanetType().toString() + ".Production.";
 
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
-            goods[goodType.ordinal()] += Constants.goods.getLong(key);
+            goodsPrices.addGood(goodType.ordinal(), Constants.goods.getLong(key).intValue());
         }
     }
     private void updatePrices() {
         Random random = new Random();
-        var goods = goodsPrices.goods;
-        var prices = goodsPrices.prices;
 
         String baseKey = "BasePrices.";
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
             int basePrice = Constants.goods.getLong(key).intValue() + random.nextInt(0, 21);
-            int offset = goods[goodType.ordinal()];
+            int offset = goodsPrices.getGoodAmount(goodType.ordinal());
 
-            prices[goodType.ordinal()] = computePrice(basePrice, offset);
+            goodsPrices.setPrice(goodType.ordinal(), computePrice(basePrice, offset));
         }
     }
     private void updateItems() {
-        var goods = goodsPrices.goods;
         String baseKey = getPlanetType().toString() + ".Consumption.";
 
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
-            int by = Constants.goods.getLong(key).intValue();
-            int origAmount = goods[goodType.ordinal()];
-            goods[goodType.ordinal()] = consumeGood(origAmount, by);
+            int by = Math.min(goodsPrices.getGoodAmount(goodType.ordinal()), Constants.goods.getLong(key).intValue());
+            goodsPrices.removeGood(goodType.ordinal(), by);
         }
     }
     private int computePrice(int base, int offset) {
@@ -99,6 +88,7 @@ public class Planet {
         return newPrice;
     }
     private int consumeGood(int origAmount, int by) {
-        return by > origAmount ? 0 : origAmount - by;
+        int new_amount = origAmount - by;
+        return Math.max(0, new_amount);
     }
 }

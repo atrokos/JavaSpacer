@@ -11,9 +11,7 @@ import static cz.cuni.mff.pijalekj.enums.EntityType.Trader;
 public class EntityManager {
     private final ArrayList<Entity> entities = new ArrayList<>();
 
-    public EntityManager() {
-
-    }
+    public EntityManager() {}
 
     public Entity getEntity(int entityID) {
         return entities.get(entityID);

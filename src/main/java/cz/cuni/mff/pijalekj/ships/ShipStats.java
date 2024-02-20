@@ -6,7 +6,7 @@ public class ShipStats {
     /**
      *  Cargo capacity of the ship.
      */
-    public MaxValue cargo;
+    public final int maxCargo;
 
     /**
      *  Fuel of the ship.
@@ -33,10 +33,10 @@ public class ShipStats {
      */
     public double fleeChance = 0.;
 
-    public ShipStats(MaxValue health, MaxValue cargo, MaxValue fuel,
+    public ShipStats(MaxValue health, int cargo, MaxValue fuel,
                      MaxValue shields, int damage, int maneuver) {
         this.health = health;
-        this.cargo = cargo;
+        this.maxCargo = cargo;
         this.fuel = fuel;
         this.shields = shields;
         this.damage = damage;

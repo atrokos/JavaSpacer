@@ -1,28 +1,24 @@
 package cz.cuni.mff.pijalekj.managers;
 
-import cz.cuni.mff.pijalekj.utils.Constants;
+import cz.cuni.mff.pijalekj.constants.Constants;
 
 import java.util.HashMap;
 
-public class CriminalsManager {
-    HashMap<Long, Integer> criminals = new HashMap<>();
-
-    public CriminalsManager() {}
-
+public class CriminalsManager extends HashMap<Long, Integer> {
     public boolean isCriminal(long entityID) {
-        return criminals.containsKey(entityID);
+        return this.containsKey(entityID);
     }
 
     public void addCriminal(long entityID) {
-        criminals.put(entityID, Constants.DEFAULT_TIMEOUT);
+        this.put(entityID, Constants.DEFAULT_TIMEOUT);
     }
 
     public void removeCriminal(long entityID) {
-        criminals.remove(entityID);
+        this.remove(entityID);
     }
 
     public void updateCriminals() {
-        criminals.replaceAll((key, value) -> value - 1);
-        criminals.entrySet().removeIf(item -> item.getValue() <= 0);
+        this.replaceAll((key, value) -> value - 1);
+        this.entrySet().removeIf(item -> item.getValue() <= 0);
     }
 }

@@ -106,7 +106,6 @@ public class WorldGenerator {
 
     public static void populateWorld(LocationsManager lm, EntityManager em) {
         for (var entity : em.getEntities()) {
-            System.out.println(entity.getCurrPosition());
             lm.addEntityTo(entity.getID(), entity.getCurrPosition());
         }
     }

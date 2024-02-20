@@ -1,5 +1,6 @@
 package cz.cuni.mff.pijalekj.entities;
 
+import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
@@ -51,17 +52,7 @@ public abstract class Entity implements BattleReady {
     }
 
     public boolean isEmpty() {
-        return ownedShip.getStats().cargo.getCurr() == 0;
-    }
-
-    public void changeGoodsBy(GoodsIndex type, int number) {
-        entityStats.ownedGoods[type.ordinal()] += number;
-        ownedShip.getStats().cargo.changeBy(number);
-    }
-
-    public void changeGoodsBy(int type, int number) {
-        entityStats.ownedGoods[type] += number;
-        ownedShip.getStats().cargo.changeBy(number);
+        return entityStats.getTotalGoodsAmount() == 0;
     }
 
     public int getCurrPosition() {
@@ -89,20 +80,10 @@ public abstract class Entity implements BattleReady {
             return;
         }
 
-        int maxCapacity = ownedShip.getStats().cargo.getMax();
-        var opGoods = opponent.entityStats.ownedGoods;
+        int maxCapacity = ownedShip.getStats().maxCargo;
+        int free = maxCapacity - entityStats.getTotalGoodsAmount();
 
-        for (int i = 0; i < opGoods.length; ++i) {
-            int diff = maxCapacity - opGoods[i] - ownedShip.getStats().cargo.getCurr();
-            if (diff >= 0) {
-                changeGoodsBy(i, opGoods[i]);
-                opponent.changeGoodsBy(i, -opGoods[i]);
-            }
-            else {
-                changeGoodsBy(i, ownedShip.getStats().cargo.getCurr());
-                opponent.changeGoodsBy(i, -ownedShip.getStats().cargo.getCurr());
-            }
-        }
+        this.entityStats.transferAllGoods(opponent.entityStats, free);
     }
 
     protected void travel() {
@@ -124,5 +105,42 @@ public abstract class Entity implements BattleReady {
         var victimSustain = victimHealth / (attackerDamage + 1);
 
         return mySustain - victimSustain;
+    }
+
+    protected void maintenance() {
+        // Shields always recharge when at a planet
+        ownedShip.rechargeShields();
+
+        // Fuel
+        int fuelDiff = ownedShip.getStats().fuel.getMax() - ownedShip.getStats().fuel.getCurr();
+        int neededCredits = fuelDiff * Constants.fuelCost;
+
+        if (fuelDiff > 0 && neededCredits <= entityStats.getCredits()) {
+            entityStats.removeCredits(neededCredits);
+            ownedShip.refuel(fuelDiff);
+        }
+        else {
+            entityStats.addCredits(50);
+        }
+
+        // Hull
+        int hullDiff = ownedShip.getStats().health.getMax() - ownedShip.getStats().health.getCurr();
+        neededCredits = fuelDiff * Constants.fuelCost;
+        if (hullDiff > 0 && neededCredits <= entityStats.getCredits()) {
+            entityStats.removeCredits(neededCredits);
+            ownedShip.repairHull(hullDiff);
+        }
+        else {
+            entityStats.addCredits(50);
+        }
+    }
+
+    protected void sell() {
+        var currPlanet = travelManager.getCurrLocation();
+        for (var goodIndex : GoodsIndex.values()) {
+            int index = goodIndex.ordinal();
+            this.entityStats.addCredits(currPlanet.sell(index, this.entityStats.getGoodAmount(index)));
+            this.entityStats.removeGood(index, this.entityStats.getGoodAmount(index));
+        }
     }
 }

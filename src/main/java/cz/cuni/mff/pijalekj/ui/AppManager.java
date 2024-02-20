@@ -8,13 +8,13 @@ import cz.cuni.mff.pijalekj.managers.LocationsManager;
 import cz.cuni.mff.pijalekj.utils.WorldGenerator;
 
 import java.io.Console;
+import java.io.IOException;
 
 public class AppManager {
     Game game = null;
     EventUI eventUI;
-    Console console = System.console();
 
-    public AppManager(int planetAmount) {
+    public AppManager(int planetAmount) throws IOException {
         this.game = initializeGame(planetAmount);
         eventUI = new TerminalUI(this.game);
     }
@@ -28,16 +28,12 @@ public class AppManager {
         return new Game(lm, cm, em);
     }
 
-    public void setPlayerName() {
-        eventUI.askPlayerName();
-        String name = console.readLine();
-        game.getEntityManager().getPlayer().setName(name);
+    public void setPlayerName() throws IOException {
     }
 
     public void mainScreen() {
         eventUI.showMainScreen();
         eventUI.showOptions(Constants.strings.getList("Options.Welcome"));
-
     }
 
     public void run() {

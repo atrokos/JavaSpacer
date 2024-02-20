@@ -92,20 +92,12 @@ public class Police extends Entity {
         return OptionalInt.empty();
     }
 
-    private void maintenance() {
+    @Override
+    protected void maintenance() {
         // Shields always recharge when at a planet
         ownedShip.rechargeShields();
         ownedShip.repairHull();
         ownedShip.refuel();
-    }
-
-    private void sell() {
-        var currPlanet = travelManager.getCurrLocation();
-        for (var goodIndex : GoodsIndex.values()) {
-            int index = goodIndex.ordinal();
-            entityStats.credits += currPlanet.sell(index, entityStats.ownedGoods[index]);
-            changeGoodsBy(index, -entityStats.ownedGoods[index]);
-        }
     }
 
     private int getHomePlanetID() {

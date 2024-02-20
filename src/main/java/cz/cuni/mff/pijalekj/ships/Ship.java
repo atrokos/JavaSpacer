@@ -2,7 +2,8 @@ package cz.cuni.mff.pijalekj.ships;
 
 import cz.cuni.mff.pijalekj.enums.ShipSize;
 import cz.cuni.mff.pijalekj.enums.ShipType;
-import cz.cuni.mff.pijalekj.utils.Constants;
+import cz.cuni.mff.pijalekj.constants.Constants;
+
 
 public class Ship {
     private final ShipStats shipStats;
@@ -19,9 +20,8 @@ public class Ship {
     }
 
     public void refuel(int capacity) {
-        if (capacity + this.shipStats.fuel.getCurr() > this.shipStats.fuel.getMax()) {
-            throw new IllegalArgumentException("Ship was told to refuel more than it can store.");
-        }
+        assert capacity + this.shipStats.fuel.getCurr() <= this.shipStats.fuel.getMax():
+                "Ship was told to refuel more than it can store.";
         this.shipStats.fuel.changeBy(capacity);
     }
 
@@ -48,9 +48,9 @@ public class Ship {
     }
 
     public void repairHull(int newHealth){
-        if (newHealth + this.shipStats.health.getCurr() > this.shipStats.health.getMax()) {
-            throw new IllegalArgumentException("Ship was told to repair more than it can be.");
-        }
+        assert newHealth + this.shipStats.health.getCurr() <= this.shipStats.health.getMax():
+                "Ship was told to repair more than it can be.";
+
         shipStats.health.changeBy(newHealth);
     }
 

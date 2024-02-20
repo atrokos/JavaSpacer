@@ -18,7 +18,7 @@ public class ShipBuilder {
     private static ShipStats buildStats(ShipType type) {
         String baseKey = "Ships." + type + ".";
         var health = new MaxValue(Constants.ships.getLong(baseKey + "Hull").intValue());
-        var cargo = new MaxValue(0, Constants.ships.getLong(baseKey + "Cargo").intValue());
+        var cargo = Constants.ships.getLong(baseKey + "Cargo").intValue();
         var fuel = new MaxValue( 3 * Constants.ships.getLong(baseKey + "MaxJump").intValue());
         var shields = new MaxValue(Constants.ships.getLong(baseKey + "Shields").intValue());
         int damage = Constants.ships.getLong(baseKey + "Damage").intValue();
