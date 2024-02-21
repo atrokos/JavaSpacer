@@ -31,7 +31,7 @@ public class ShipStats {
     /**
      *  Ship's chance to flee from combat.
      */
-    public double fleeChance = 0.;
+    public int fleeChance = 0;
 
     public ShipStats(MaxValue health, int cargo, MaxValue fuel,
                      MaxValue shields, int damage, int maneuver) {

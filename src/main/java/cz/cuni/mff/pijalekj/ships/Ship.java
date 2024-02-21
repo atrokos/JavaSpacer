@@ -14,9 +14,8 @@ public class Ship {
         this.shipStats = shipStats;
         this.shipSize = shipSize;
         this.shipType = shipType;
-
-        shipStats.fleeChance =
-                (0.8 * Math.pow(shipStats.maneuver / 100.0, 2) + 0.2) * 100;
+        double fleeChanceDouble = (0.8 * Math.pow(shipStats.maneuver / 100.0, 2) + 0.2) * 100;
+        shipStats.fleeChance = (int) fleeChanceDouble;
     }
 
     public void refuel(int capacity) {
@@ -26,24 +25,24 @@ public class Ship {
     }
 
     public void refuel() {
-        shipStats.fuel.setToMax();
+        this.shipStats.fuel.setToMax();
     }
 
     public void rechargeShields() {
-        shipStats.shields.setToMax();
+        this.shipStats.shields.setToMax();
     }
 
     public void takeDamage(int damage) {
-        int carry_damage = shipStats.shields.getCurr() - damage;
+        int carry_damage = this.shipStats.shields.getCurr() - damage;
         if (carry_damage < 0)
         {
-            shipStats.shields.setCurr(0);
+            this.shipStats.shields.setCurr(0);
             // Addition, because carry_damage is negative in this case
-            shipStats.health.setCurr(shipStats.health.getCurr() + carry_damage);
+            this.shipStats.health.setCurr(this.shipStats.health.getCurr() + carry_damage);
         }
         else
         {
-            shipStats.shields.setCurr(carry_damage);
+            this.shipStats.shields.setCurr(carry_damage);
         }
     }
 
@@ -51,27 +50,27 @@ public class Ship {
         assert newHealth + this.shipStats.health.getCurr() <= this.shipStats.health.getMax():
                 "Ship was told to repair more than it can be.";
 
-        shipStats.health.changeBy(newHealth);
+        this.shipStats.health.changeBy(newHealth);
     }
 
     public void repairHull() {
-        shipStats.health.setToMax();
+        this.shipStats.health.setToMax();
     }
 
     public ShipSize getShipSize() {
-        return shipSize;
+        return this.shipSize;
     }
 
     public ShipType getShipType() {
-        return shipType;
+        return this.shipType;
     }
 
     public ShipStats getStats() {
-        return shipStats;
+        return this.shipStats;
     }
 
-    public double getFleeChance() {
-        return shipStats.fleeChance;
+    public int getFleeChance() {
+        return this.shipStats.fleeChance;
     }
 
     public static int damageOutput(Ship attacker, Ship defender) {
@@ -80,6 +79,10 @@ public class Ship {
 
         return Math.toIntExact(
                 Math.round(att_damage * (1 - (def_maneuver / (100 + Constants.BATTLE_COEFF)))));
+    }
+
+    public boolean isAlive() {
+        return this.shipStats.health.getCurr() > 0;
     }
 
 }

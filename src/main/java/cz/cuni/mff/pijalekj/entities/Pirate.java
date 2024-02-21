@@ -1,16 +1,15 @@
 package cz.cuni.mff.pijalekj.entities;
 
-import cz.cuni.mff.pijalekj.constants.Constants;
+import cz.cuni.mff.pijalekj.battle.BattleDecision;
 import cz.cuni.mff.pijalekj.enums.BattleActionType;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
-import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.enums.ShipType;
-import cz.cuni.mff.pijalekj.managers.Battle;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
 import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.TravelManager;
 import cz.cuni.mff.pijalekj.ships.Ship;
 
+import java.util.OptionalInt;
 import java.util.Random;
 
 public class Pirate extends Entity {
@@ -18,19 +17,19 @@ public class Pirate extends Entity {
         super(travelManager, entityManager, criminalsManager, ownedShip, entityStats, prevAction, entityID);
     }
 
-    @Override
-    public BattleActionType battle(Entity opponent) {
-        if (outSustain(opponent) > 0) {
-            return BattleActionType.attack;
+    public BattleDecision battle(Entity opponent) {
+        if (this.outSustain(opponent.getOwnedShip()) > 0) {
+            return new BattleDecision(BattleActionType.attack,
+                    Ship.damageOutput(this.ownedShip, opponent.getOwnedShip()));
         }
 
-        return BattleActionType.flee;
+        return new BattleDecision(BattleActionType.flee, this.ownedShip.getFleeChance());
     }
 
     @Override
     public void won(Entity opponent) {
-        takeAll(opponent);
-        this.entityStats.transferAllCredits(opponent.entityStats);
+        this.takeAll(opponent.getEntityStats());
+        this.entityStats.transferAllCredits(opponent.getEntityStats());
     }
 
     @Override
@@ -39,62 +38,59 @@ public class Pirate extends Entity {
     }
 
     @Override
-    public void play() {
+    public OptionalInt play() {
         System.out.println("Pirate is playing!");
         if (!this.isAlive()) {
-            return;
+            return OptionalInt.empty();
         }
 
-        if (travelManager.isTraveling()) {
-            if (prevAction != EntityActions.battle && prevAction != EntityActions.scan) {
-                findVictim();
-
-                if (!this.isAlive()) {
-                    return;
-                }
+        if (this.travelManager.isTraveling()) {
+            if (this.prevAction != EntityActions.battle && this.prevAction != EntityActions.scan) {
+                return this.findVictim();
             }
 
-            travel();
-            return;
+            this.travel();
+            return OptionalInt.empty();
         }
 
-        maintenance();
-        if (!this.isEmpty()) {
-            sell();
+        this.maintenance();
+        if (this.isFull()) {
+            this.sell();
         }
-        prevAction = EntityActions.maintenance;
+        this.prevAction = EntityActions.maintenance;
 
-        if (ownedShip.getStats().fuel.getCurr() < 13) {
-            return;
+        if (this.ownedShip.getStats().fuel.getCurr() < 13) {
+            return OptionalInt.empty();
         }
 
         // Otherwise, travel to a random neighbor
-        var neighbors = travelManager.getNeighbors().toArray(Integer[]::new);
+        var neighbors = this.travelManager.getNeighbors().toArray(Integer[]::new);
         int randomIndex = new Random().nextInt(neighbors.length);
 
-        prevAction = EntityActions.travelPrep;
-        travelManager.travelStart(neighbors[randomIndex]);
+        this.prevAction = EntityActions.travelPrep;
+        this.travelManager.travelStart(neighbors[randomIndex]);
+        return OptionalInt.empty();
     }
 
-    private void findVictim() {
-        var presentEnt = travelManager.getPresentEntities();
+    private OptionalInt findVictim() {
+        var presentEnt = this.travelManager.getPresentEntities();
         int maxSustain = 0;
         int victimID = -1;
-        prevAction = EntityActions.scan;
+        this.prevAction = EntityActions.scan;
 
         for (var ID : presentEnt) {
-            var entity = entityManager.getEntity(ID);
+            var entityShip = this.entityManager.getEntityShip(ID);
             // Ignore the worst ships
-            switch (entity.getOwnedShip().getShipType()) {
+            switch (entityShip.getShipType()) {
                 case ShipType.Gnat, ShipType.Flea -> {
                     continue;
                 }
             }
-            if (ID == entityID) {
+            if (ID == this.entityID) {
                 continue;
             }
 
-            int sustain = outSustain(entity);
+            int sustain = this.outSustain(entityShip);
             if (sustain > maxSustain) {
                 maxSustain = sustain;
                 victimID = ID;
@@ -103,11 +99,12 @@ public class Pirate extends Entity {
 
         if (victimID != -1) {
             if (presentEnt.size() > 2) {
-                criminalsManager.addCriminal(entityID);
+                this.criminalsManager.addCriminal(this.entityID);
             }
-
-            Battle.fight(this, entityManager.getEntity(victimID));
-            prevAction = EntityActions.battle;
+            this.prevAction = EntityActions.battle;
+            return OptionalInt.of(victimID);
         }
+
+        return OptionalInt.empty();
     }
 }

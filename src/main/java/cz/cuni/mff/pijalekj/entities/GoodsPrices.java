@@ -1,8 +1,8 @@
 package cz.cuni.mff.pijalekj.entities;
 
 public class GoodsPrices {
-    private int[] goods;
-    private int[] prices;
+    private final int[] goods;
+    private final int[] prices;
 
     public GoodsPrices(int[] goods, int[] prices) {
         this.goods = goods;
@@ -10,27 +10,27 @@ public class GoodsPrices {
     }
 
     public int getGoodAmount(int good) {
-        assert goods[good] >= 0: "Good " + good + " is < 0!";
-        return goods[good];
+        assert this.goods[good] >= 0: "Good " + good + " is < 0!";
+        return this.goods[good];
     }
 
     public void addGood(int good, int amount) {
         assert amount >= 0: "Good " + good + " amount cannot be negative!";
-        goods[good] += amount;
+        this.goods[good] += amount;
     }
 
     public void removeGood(int good, int amount) {
         assert amount >= 0: "Good " + good + " amount cannot be negative!";
-        assert goods[good] >= amount: "Amount has to be larger than goods[good]!";
-        goods[good] -= amount;
+        assert this.goods[good] >= amount: "Amount has to be larger than goods[good]!";
+        this.goods[good] -= amount;
     }
 
     public int getPrice(int good) {
-        return prices[good];
+        return this.prices[good];
     }
 
     public void setPrice(int good, int price) {
         assert price >= 0;
-        prices[good] = price;
+        this.prices[good] = price;
     }
 }

@@ -89,19 +89,19 @@ public class WorldGenerator {
     }
 
     public static void generateEntities(LocationsManager lm, EntityManager em, CriminalsManager cm) {
-        ArrayList<Entity> entities = new ArrayList<>();
         int noOfPlanets = lm.getAllPlanets().length;
+        ArrayList<Entity> entities = new ArrayList<>();
         EntityBuilder eb = new EntityBuilder(em, lm, cm);
-        em.addEntity(eb.newEntity(0, noOfPlanets/2, EntityType.Player));
 
-        int idCounter = 1; // Change to 1 after testing NPCs
+        int idCounter = 0; // Change to 1 after testing NPCs
         for (int i = 0; i < noOfPlanets; ++i) {
-            em.addEntity(eb.newEntity(idCounter++, i, EntityType.Police));
-            em.addEntity(eb.newEntity(idCounter++, i, EntityType.Trader));
+            entities.add(eb.newEntity(idCounter++, i, EntityType.Police));
+            entities.add(eb.newEntity(idCounter++, i, EntityType.Trader));
             if (i % 5 == 0) {
-                em.addEntity(eb.newEntity(idCounter++, i, EntityType.Pirate));
+                entities.add(eb.newEntity(idCounter++, i, EntityType.Pirate));
             }
         }
+        em.setEntities(entities.toArray(Entity[]::new));
     }
 
     public static void populateWorld(LocationsManager lm, EntityManager em) {

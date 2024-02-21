@@ -18,19 +18,19 @@ public class TravelManager {
     }
 
     public void travel() {
-        if (!isTraveling()) {
+        if (!this.isTraveling()) {
             return;
         }
 
-        --travelTimeLeft;
-        if (travelTimeLeft <= 0) {
-            travelEnd();
+        --this.travelTimeLeft;
+        if (this.travelTimeLeft <= 0) {
+            this.travelEnd();
         }
     }
 
     public void travelStart(int nextLocationID) {
         this.nextLocID = nextLocationID;
-        this.travelTimeLeft = locMan.getDistanceBetween(this.currLocID, this.nextLocID);
+        this.travelTimeLeft = this.locMan.getDistanceBetween(this.currLocID, this.nextLocID);
         if (this.travelTimeLeft <= 0) {
             throw new IllegalArgumentException(
                     "NPC wants to travel to either the same place or those two places aren't neighbors");
@@ -53,7 +53,7 @@ public class TravelManager {
     }
 
     public HashSet<Integer> getPresentEntities() {
-        if (isTraveling()) {
+        if (this.isTraveling()) {
             return this.locMan.getPresentEntities(this.currLocID, this.nextLocID);
         }
         return this.locMan.getPresentEntities(this.currLocID);
@@ -68,7 +68,7 @@ public class TravelManager {
     }
 
     public HashSet<Integer> getNeighbors() {
-        return getNeighbors(currLocID);
+        return this.getNeighbors(this.currLocID);
     }
 
     public Planet getCurrLocation() {

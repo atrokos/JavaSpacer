@@ -12,10 +12,10 @@ public class GameClock {
     }
 
     public boolean tick() {
-        return ticks++ % BIGTICK == 0;
+        return this.ticks++ % BIGTICK == 0;
     }
 
     public long get_ticks() {
-        return ticks;
+        return this.ticks;
     }
 }

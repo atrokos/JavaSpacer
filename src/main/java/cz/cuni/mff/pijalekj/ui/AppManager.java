@@ -15,8 +15,8 @@ public class AppManager {
     EventUI eventUI;
 
     public AppManager(int planetAmount) throws IOException {
-        this.game = initializeGame(planetAmount);
-        eventUI = new TerminalUI(this.game);
+        this.game = this.initializeGame(planetAmount);
+        this.eventUI = new TerminalUI(this.game);
     }
     private Game initializeGame(int planetAmount) {
         EntityManager em = new EntityManager();
@@ -32,8 +32,8 @@ public class AppManager {
     }
 
     public void mainScreen() {
-        eventUI.showMainScreen();
-        eventUI.showOptions(Constants.strings.getList("Options.Welcome"));
+        this.eventUI.showMainScreen();
+        this.eventUI.showOptions(Constants.strings.getList("Options.Welcome"));
     }
 
     public void run() {

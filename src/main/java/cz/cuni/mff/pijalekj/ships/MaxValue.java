@@ -19,25 +19,25 @@ public class MaxValue {
     }
 
     public void setCurr(int value) throws IllegalArgumentException {
-        assert value <= max: "Tuple was given higher value than its maximum.";
-        curr = value;
+        assert value <= this.max : "Tuple was given higher value than its maximum.";
+        this.curr = value;
     }
 
     public int getMax() {
-        return max;
+        return this.max;
     }
 
     public int getCurr() {
-        return curr;
+        return this.curr;
     }
 
     public void changeBy(int value) {
-        assert curr + value <= max;
-        curr += value;
+        assert this.curr + value <= this.max;
+        this.curr += value;
     }
 
     // Sets the current value to the maximum.
     public void setToMax() {
-        curr = max;
+        this.curr = this.max;
     }
 }

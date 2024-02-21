@@ -14,7 +14,7 @@ public class EntityStats {
     }
 
     public int getTotalGoodsAmount() {
-        return Arrays.stream(ownedGoods).sum();
+        return Arrays.stream(this.ownedGoods).sum();
     }
 
     public int getCredits() {

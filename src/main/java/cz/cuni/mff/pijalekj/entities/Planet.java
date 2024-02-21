@@ -20,43 +20,43 @@ public class Planet {
         this.planetType = planetType;
     }
     public String getName() {
-        return name;
+        return this.name;
     }
     public long getPlanetID() {
-        return planetID;
+        return this.planetID;
     }
     public GoodsPrices getGoodsPrices() {
-        return goodsPrices;
+        return this.goodsPrices;
     }
     public PlanetIndustryType getPlanetType() {
-        return planetType;
+        return this.planetType;
     }
 
     // Good - the good to be bought from the planet; amount - how many to buy;
     // returns the final price (positive)
     public int buy(int good, int amount) {
-        goodsPrices.removeGood(good, amount);
-        return amount * goodsPrices.getPrice(good);
+        this.goodsPrices.removeGood(good, amount);
+        return amount * this.goodsPrices.getPrice(good);
     }
 
     // Good - the good to be sold to the planet; amount - how many to sell
     // Returns the final cost (positive)
     public int sell(int good, int amount) {
-        goodsPrices.addGood(good, amount);
-        return amount * goodsPrices.getPrice(good);
+        this.goodsPrices.addGood(good, amount);
+        return amount * this.goodsPrices.getPrice(good);
     }
     public void update() {
-        updateIndustry();
-        updateItems();
-        updatePrices();
+        this.updateIndustry();
+        this.updateItems();
+        this.updatePrices();
     }
 
     private void updateIndustry() {
-        String baseKey = getPlanetType().toString() + ".Production.";
+        String baseKey = this.getPlanetType().toString() + ".Production.";
 
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
-            goodsPrices.addGood(goodType.ordinal(), Constants.goods.getLong(key).intValue());
+            this.goodsPrices.addGood(goodType.ordinal(), Constants.goods.getLong(key).intValue());
         }
     }
     private void updatePrices() {
@@ -66,18 +66,18 @@ public class Planet {
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
             int basePrice = Constants.goods.getLong(key).intValue() + random.nextInt(0, 21);
-            int offset = goodsPrices.getGoodAmount(goodType.ordinal());
+            int offset = this.goodsPrices.getGoodAmount(goodType.ordinal());
 
-            goodsPrices.setPrice(goodType.ordinal(), computePrice(basePrice, offset));
+            this.goodsPrices.setPrice(goodType.ordinal(), this.computePrice(basePrice, offset));
         }
     }
     private void updateItems() {
-        String baseKey = getPlanetType().toString() + ".Consumption.";
+        String baseKey = this.getPlanetType().toString() + ".Consumption.";
 
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
-            int by = Math.min(goodsPrices.getGoodAmount(goodType.ordinal()), Constants.goods.getLong(key).intValue());
-            goodsPrices.removeGood(goodType.ordinal(), by);
+            int by = Math.min(this.goodsPrices.getGoodAmount(goodType.ordinal()), Constants.goods.getLong(key).intValue());
+            this.goodsPrices.removeGood(goodType.ordinal(), by);
         }
     }
     private int computePrice(int base, int offset) {

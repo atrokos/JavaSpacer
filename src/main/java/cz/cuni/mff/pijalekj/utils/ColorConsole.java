@@ -23,23 +23,25 @@ public class ColorConsole {
         System.out.print(s);
     }
     public void reset() {
-        reset(3);
+        this.reset(3);
     }
 
     public void printFG(TerminalColor fgcolor, String message) {
-        setForeground(fgcolor);
+        this.setForeground(fgcolor);
         System.out.print(message);
-        setForeground(FGDefault);
+        this.setForeground(this.FGDefault);
     }
     public void printFGBG(TerminalColor fgcolor, TerminalColor bgcolor, String message) {
-        setForeground(fgcolor); setBackground(bgcolor);
+        this.setForeground(fgcolor);
+        this.setBackground(bgcolor);
         System.out.print(message);
-        setForeground(FGDefault); setBackground(BGDefault);
+        this.setForeground(this.FGDefault);
+        this.setBackground(this.BGDefault);
     }
     public void printBG(TerminalColor bgcolor, String message) {
-        setBackground(bgcolor);
+        this.setBackground(bgcolor);
         System.out.print(message);
-        setBackground(FGDefault);
+        this.setBackground(this.FGDefault);
     }
     public void print(String message) {
         System.out.print(message);

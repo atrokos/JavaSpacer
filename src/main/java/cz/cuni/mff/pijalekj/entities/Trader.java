@@ -1,5 +1,6 @@
 package cz.cuni.mff.pijalekj.entities;
 
+import cz.cuni.mff.pijalekj.battle.BattleDecision;
 import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.BattleActionType;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
@@ -12,21 +13,21 @@ import cz.cuni.mff.pijalekj.ships.Ship;
 import java.util.*;
 
 public class Trader extends Entity {
-    private LinkedList<Integer> path = new LinkedList<>();
+    private Deque<Integer> path = new LinkedList<>();
     public Trader(TravelManager travelManager, EntityManager entityManager, CriminalsManager criminalsManager,
                   Ship ownedShip, EntityStats entityStats, EntityActions prevAction, int entityID) {
         super(travelManager, entityManager, criminalsManager, ownedShip, entityStats, prevAction, entityID);
     }
 
     @Override
-    public BattleActionType battle(Entity opponent) {
-        return BattleActionType.flee;
+    public BattleDecision battle(Entity opponent) {
+        return new BattleDecision(BattleActionType.flee, this.ownedShip.getFleeChance());
     }
 
     @Override
     public void won(Entity opponent) {
-        takeAll(opponent);
-        this.entityStats.transferAllCredits(opponent.entityStats);
+        this.takeAll(opponent.getEntityStats());
+        this.entityStats.transferAllCredits(opponent.getEntityStats());
     }
 
     @Override
@@ -35,46 +36,47 @@ public class Trader extends Entity {
     }
 
     @Override
-    public void play() {
+    public OptionalInt play() {
         System.out.println("Trader is playing!");
         if (!this.isAlive()) {
-            return;
+            return OptionalInt.empty();
         }
 
-        if (travelManager.isTraveling()) {
-            travel();
-            return;
+        if (this.travelManager.isTraveling()) {
+            this.travel();
+            return OptionalInt.empty();
         }
 
-        maintenance();
-        if (!this.isEmpty()) {
-            sell();
+        this.maintenance();
+        if (this.isFull()) {
+            this.sell();
         }
 
-        if (path.isEmpty()) {
-            if (prevAction != EntityActions.sell) {
-                sell();
-                prevAction = EntityActions.sell;
-                return;
-            } else if (ownedShip.getStats().fuel.getCurr() < 13) {
-                return;
+        if (this.path.isEmpty()) {
+            if (this.prevAction != EntityActions.sell) {
+                this.sell();
+                this.prevAction = EntityActions.sell;
+                return OptionalInt.empty();
+            } else if (this.ownedShip.getStats().fuel.getCurr() < 13) {
+                return OptionalInt.empty();
             } else {
-                createPlan();
+                this.createPlan();
             }
         } else {
-            int nextDestinationID = path.pop();
-            travelManager.travelStart(nextDestinationID);
-            prevAction = EntityActions.travelPrep;
+            int nextDestinationID = this.path.pop();
+            this.travelManager.travelStart(nextDestinationID);
+            this.prevAction = EntityActions.travelPrep;
         }
+        return OptionalInt.empty();
     }
 
     private void createPlan() {
-        LinkedList<Integer> newPath = new LinkedList<>();
-        newPath.add(travelManager.getCurrLocationID());
+        Deque<Integer> newPath = new LinkedList<>();
+        newPath.add(this.travelManager.getCurrLocationID());
 
         HashSet<Integer> visited = new HashSet<>();
-        var results = findBestPlanet(newPath, 0, Integer.MIN_VALUE, visited, -1);
-        var currPlanet = travelManager.getCurrLocation();
+        var results = this.findBestPlanet(newPath, 0, Integer.MIN_VALUE, visited, -1);
+        var currPlanet = this.travelManager.getCurrLocation();
 
         for (var goodIndex : GoodsIndex.values()) {
             int index = goodIndex.ordinal();
@@ -84,22 +86,22 @@ public class Trader extends Entity {
 
         results.path.removeFirst();
         this.path = results.path;
-        travelManager.travelStart(path.removeFirst());
+        this.travelManager.travelStart(this.path.removeFirst());
     }
 
-    private TraderPlan findBestPlanet(LinkedList<Integer> path, int travelLength, int rating,
+    private TraderPlan findBestPlanet(Deque<Integer> path, int travelLength, int rating,
                                       HashSet<Integer> visited, int counter)
     {
         int currPlanetID = path.getLast();
         int bestRating = rating;
-        var bestPath = new LinkedList<Integer>(path);
+        Deque<Integer> bestPath = new LinkedList<Integer>(path);
         int[] toBuy = new int[9];
 
         ++counter;
         visited.add(currPlanetID);
 
-        if (currPlanetID != travelManager.getCurrLocationID()) {
-            var planetRating = ratePlanet(travelManager.getPlanet(currPlanetID), travelLength);
+        if (currPlanetID != this.travelManager.getCurrLocationID()) {
+            var planetRating = this.ratePlanet(this.travelManager.getPlanet(currPlanetID), travelLength);
             if (planetRating.rating > bestRating) {
                 bestRating= planetRating.rating;
                 toBuy = planetRating.toBuy;
@@ -110,14 +112,14 @@ public class Trader extends Entity {
             return new TraderPlan(bestPath, bestRating, toBuy);
         }
 
-        for (int neighborID : travelManager.getNeighbors(currPlanetID)) {
+        for (int neighborID : this.travelManager.getNeighbors(currPlanetID)) {
             if (visited.contains(neighborID)) {
                 continue;
             }
 
             path.addLast(neighborID);
-            int distance = travelLength + travelManager.getDistanceBetween(currPlanetID, neighborID);
-            var found = findBestPlanet(path, distance, bestRating, visited, counter);
+            int distance = travelLength + this.travelManager.getDistanceBetween(currPlanetID, neighborID);
+            var found = this.findBestPlanet(path, distance, bestRating, visited, counter);
             path.removeLast();
 
             if (found.rating > bestRating) {
@@ -133,7 +135,7 @@ public class Trader extends Entity {
     private RatingBuy ratePlanet(Planet planet, int travelLength) {
         int[] toBuy = new int[9];
         SortedMap<Integer, Integer> goodsDiff = new TreeMap<>();
-        var currPlanetGoodsPrices = travelManager.getCurrLocation().getGoodsPrices();
+        var currPlanetGoodsPrices = this.travelManager.getCurrLocation().getGoodsPrices();
         var planetGoodsPrices = planet.getGoodsPrices();
         int rating = -(travelLength * Constants.fuelCost);
 
@@ -148,8 +150,8 @@ public class Trader extends Entity {
                 goodsDiff.put(priceDiff, index);
         }
 
-        int credits = entityStats.getCredits();
-        int freeSpace = ownedShip.getStats().maxCargo - entityStats.getTotalGoodsAmount();
+        int credits = this.entityStats.getCredits();
+        int freeSpace = this.ownedShip.getStats().maxCargo - this.entityStats.getTotalGoodsAmount();
         for (var key : goodsDiff.reversed().keySet()) {
             int index = 0;
             try {
@@ -179,6 +181,6 @@ public class Trader extends Entity {
         return new RatingBuy(rating, toBuy);
     }
 
-    private record TraderPlan(LinkedList<Integer> path, int rating, int[] toBuy) {}
+    private record TraderPlan(Deque<Integer> path, int rating, int[] toBuy) {}
     private record RatingBuy(int rating, int[] toBuy) {}
 }

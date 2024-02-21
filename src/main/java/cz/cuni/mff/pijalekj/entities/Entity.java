@@ -1,5 +1,6 @@
 package cz.cuni.mff.pijalekj.entities;
 
+import cz.cuni.mff.pijalekj.battle.BattleDecision;
 import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
@@ -8,7 +9,9 @@ import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.TravelManager;
 import cz.cuni.mff.pijalekj.ships.Ship;
 
-public abstract class Entity implements BattleReady {
+import java.util.OptionalInt;
+
+public abstract class Entity {
     protected TravelManager travelManager;
     protected EntityManager entityManager;
     protected CriminalsManager criminalsManager;
@@ -19,7 +22,7 @@ public abstract class Entity implements BattleReady {
     protected final int entityID;
 
     public Ship getOwnedShip() {
-        return ownedShip;
+        return this.ownedShip;
     }
 
     public void setOwnedShip(Ship ownedShip) {
@@ -27,7 +30,7 @@ public abstract class Entity implements BattleReady {
     }
 
     public EntityStats getEntityStats() {
-        return entityStats;
+        return this.entityStats;
     }
 
     public void setEntityStats(EntityStats entityStats) {
@@ -45,60 +48,62 @@ public abstract class Entity implements BattleReady {
         this.entityID = entityID;
     }
 
-    public abstract void play();
-
-    public boolean isAlive() {
-        return ownedShip.getStats().health.getCurr() > 0;
+    public abstract OptionalInt play();
+    public abstract BattleDecision battle(Entity opponent);
+    public abstract void won(Entity opponent);
+    public abstract void lost();
+    public void takeDamage(int damage) {
+        this.ownedShip.takeDamage(damage);
     }
 
-    public boolean isEmpty() {
-        return entityStats.getTotalGoodsAmount() == 0;
+    public boolean isAlive() {
+        return this.ownedShip.isAlive();
+    }
+
+    public boolean isFull() {
+        return this.entityStats.getTotalGoodsAmount() != 0;
     }
 
     public int getCurrPosition() {
-        return travelManager.getCurrLocationID();
+        return this.travelManager.getCurrLocationID();
     }
 
     public int getNextPosition() {
-        return travelManager.getNextLocationID();
+        return this.travelManager.getNextLocationID();
     }
 
     public int getID() {
-        return entityID;
+        return this.entityID;
     }
 
     public void kill() {
-        ownedShip.getStats().health.setCurr(0);
+        this.ownedShip.getStats().health.setCurr(0);
     }
 
     public boolean isTraveling() {
-        return travelManager.isTraveling();
+        return this.travelManager.isTraveling();
     }
 
-    protected void takeAll(Entity opponent) {
-        if (opponent.isEmpty() || opponent.isAlive()) {
-            return;
-        }
+    protected void takeAll(EntityStats opponent) {
+        int maxCapacity = this.ownedShip.getStats().maxCargo;
+        int free = maxCapacity - this.entityStats.getTotalGoodsAmount();
 
-        int maxCapacity = ownedShip.getStats().maxCargo;
-        int free = maxCapacity - entityStats.getTotalGoodsAmount();
-
-        this.entityStats.transferAllGoods(opponent.entityStats, free);
+        this.entityStats.transferAllGoods(opponent, free);
     }
 
     protected void travel() {
-        ownedShip.getStats().fuel.changeBy(-1);
-        travelManager.travel();
+        this.ownedShip.getStats().fuel.changeBy(-1);
+        this.travelManager.travel();
     }
 
-    protected int outSustain(Entity victim) {
+    protected int outSustain(Ship victimShip) {
         var myHealth = this.ownedShip.getStats().health.getCurr() +
                 this.ownedShip.getStats().shields.getCurr();
-        var victimHealth = victim.ownedShip.getStats().health.getCurr() +
-                victim.ownedShip.getStats().shields.getCurr();
+        var victimHealth = victimShip.getStats().health.getCurr() +
+                victimShip.getStats().shields.getCurr();
 
-        var attackerDamage = Ship.damageOutput(ownedShip, victim.ownedShip);
-        var victimDamage = Ship.damageOutput(victim.ownedShip, ownedShip);
+        var attackerDamage = Ship.damageOutput(this.ownedShip, victimShip);
+        var victimDamage = Ship.damageOutput(victimShip, this.ownedShip);
 
         // + 1 to prevent division by 0, should not affect the outcome
         var mySustain = myHealth / (victimDamage + 1);
@@ -109,34 +114,34 @@ public abstract class Entity implements BattleReady {
 
     protected void maintenance() {
         // Shields always recharge when at a planet
-        ownedShip.rechargeShields();
+        this.ownedShip.rechargeShields();
 
         // Fuel
-        int fuelDiff = ownedShip.getStats().fuel.getMax() - ownedShip.getStats().fuel.getCurr();
+        int fuelDiff = this.ownedShip.getStats().fuel.getMax() - this.ownedShip.getStats().fuel.getCurr();
         int neededCredits = fuelDiff * Constants.fuelCost;
 
-        if (fuelDiff > 0 && neededCredits <= entityStats.getCredits()) {
-            entityStats.removeCredits(neededCredits);
-            ownedShip.refuel(fuelDiff);
+        if (fuelDiff > 0 && neededCredits <= this.entityStats.getCredits()) {
+            this.entityStats.removeCredits(neededCredits);
+            this.ownedShip.refuel(fuelDiff);
         }
         else {
-            entityStats.addCredits(50);
+            this.entityStats.addCredits(50);
         }
 
         // Hull
-        int hullDiff = ownedShip.getStats().health.getMax() - ownedShip.getStats().health.getCurr();
+        int hullDiff = this.ownedShip.getStats().health.getMax() - this.ownedShip.getStats().health.getCurr();
         neededCredits = fuelDiff * Constants.fuelCost;
-        if (hullDiff > 0 && neededCredits <= entityStats.getCredits()) {
-            entityStats.removeCredits(neededCredits);
-            ownedShip.repairHull(hullDiff);
+        if (hullDiff > 0 && neededCredits <= this.entityStats.getCredits()) {
+            this.entityStats.removeCredits(neededCredits);
+            this.ownedShip.repairHull(hullDiff);
         }
         else {
-            entityStats.addCredits(50);
+            this.entityStats.addCredits(50);
         }
     }
 
     protected void sell() {
-        var currPlanet = travelManager.getCurrLocation();
+        var currPlanet = this.travelManager.getCurrLocation();
         for (var goodIndex : GoodsIndex.values()) {
             int index = goodIndex.ordinal();
             this.entityStats.addCredits(currPlanet.sell(index, this.entityStats.getGoodAmount(index)));

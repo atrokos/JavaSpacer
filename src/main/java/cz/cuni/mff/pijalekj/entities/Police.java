@@ -1,9 +1,8 @@
 package cz.cuni.mff.pijalekj.entities;
 
+import cz.cuni.mff.pijalekj.battle.BattleDecision;
 import cz.cuni.mff.pijalekj.enums.BattleActionType;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
-import cz.cuni.mff.pijalekj.enums.GoodsIndex;
-import cz.cuni.mff.pijalekj.managers.Battle;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
 import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.TravelManager;
@@ -23,84 +22,68 @@ public class Police extends Entity {
     }
 
     @Override
-    public BattleActionType battle(Entity opponent) {
-        return BattleActionType.attack;
+    public BattleDecision battle(Entity opponent) {
+        return new BattleDecision(BattleActionType.attack, Ship.damageOutput(this.ownedShip, opponent.getOwnedShip()));
     }
 
     @Override
     public void won(Entity opponent) {
-        takeAll(opponent);
+        this.takeAll(opponent.entityStats);
     }
 
     @Override
     public void lost() {
-        return;
     }
 
     @Override
-    public void play() {
+    public OptionalInt play() {
         System.out.println("Police is playing!");
         if (!this.isAlive()) {
-            return;
+            return OptionalInt.empty();
         }
 
         // This NPC is travelling
-        if (travelManager.isTraveling()) {
+        if (this.travelManager.isTraveling()) {
             // If the police have scanned or fought someone during this travel, do nothing for the rest
-            if (prevAction.equals(EntityActions.battle) || prevAction.equals(EntityActions.scan)) {
+            if (this.prevAction == EntityActions.battle || this.prevAction == EntityActions.scan) {
                 this.travel();
-                return;
+                return OptionalInt.empty();
             }
 
-            prevAction = EntityActions.scan;
-            var criminal = findCriminal();
-
-            if (criminal.isPresent()) {
-                var victim = entityManager.getEntity(criminal.getAsInt());
-                prevAction = EntityActions.battle;
-                Battle.fight(this, victim);
-                System.out.println("Fought against a criminal!");
-                if (!this.isAlive()) {
-                    return;
-                }
-                criminalsManager.removeCriminal(criminal.getAsInt());
-            }
+            return this.findCriminal();
         }
 
         // This NPC is at a planet. Do maintenance and sell all confiscated goods (if any).
-        prevAction = EntityActions.maintenance;
-        maintenance();
-        if (!this.isEmpty()) {
-            sell();
+        this.prevAction = EntityActions.maintenance;
+        this.maintenance();
+        if (this.isFull()) {
+            this.sell();
         }
 
         // Otherwise, travel to a random neighbor
-        var neighbors = travelManager.getNeighbors().toArray(Integer[]::new);
+        var neighbors = this.travelManager.getNeighbors().toArray(Integer[]::new);
         int randomIndex = new Random().nextInt(neighbors.length);
 
-        prevAction = EntityActions.travelPrep;
-        travelManager.travelStart(neighbors[randomIndex]);
+        this.prevAction = EntityActions.travelPrep;
+        this.travelManager.travelStart(neighbors[randomIndex]);
+        return OptionalInt.empty();
     }
 
     private OptionalInt findCriminal() {
-        for (var ID : travelManager.getPresentEntities()) {
-            if (criminalsManager.isCriminal(ID)) {
-                return OptionalInt.of(ID);
-            }
-        }
-
-        return OptionalInt.empty();
+        return this.travelManager.getPresentEntities().stream().mapToInt(i -> i)
+                .filter(ID -> this.criminalsManager.isCriminal(ID))
+                .findFirst();
     }
 
     @Override
     protected void maintenance() {
         // Shields always recharge when at a planet
-        ownedShip.rechargeShields();
-        ownedShip.repairHull();
-        ownedShip.refuel();
+        this.ownedShip.rechargeShields();
+        this.ownedShip.repairHull();
+        this.ownedShip.refuel();
     }
 
     private int getHomePlanetID() {
-        return homePlanetID;
+        return this.homePlanetID;
     }
 }

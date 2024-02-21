@@ -23,23 +23,25 @@ public class ColorConsole {
         System.out.print(s);
     }
     public void reset() {
-        reset(3);
+        this.reset(3);
     }
 
     public void printFG(TerminalColor fgColor, String message) {
-        setForeground(fgColor);
+        this.setForeground(fgColor);
         System.out.print(message);
-        setForeground(FGDefault);
+        this.setForeground(this.FGDefault);
     }
     public void printFGBG(TerminalColor fgColor, TerminalColor bgColor, String message) {
-        setForeground(fgColor); setBackground(bgColor);
+        this.setForeground(fgColor);
+        this.setBackground(bgColor);
         System.out.print(message);
-        setForeground(FGDefault); setBackground(BGDefault);
+        this.setForeground(this.FGDefault);
+        this.setBackground(this.BGDefault);
     }
     public void printBG(TerminalColor bgColor, String message) {
-        setBackground(bgColor);
+        this.setBackground(bgColor);
         System.out.print(message);
-        setBackground(FGDefault);
+        this.setBackground(this.FGDefault);
     }
     public void print(String message) {
         System.out.print(message);
@@ -50,6 +52,6 @@ public class ColorConsole {
     public enum TerminalColor {
         Black, DarkRed, DarkGreen, DarkYellow, DarkBlue,
         DarkViolet, Turquoise, LightGray, DarkGray,
-        Red, Green, Yellow, Blue, Violet, LightBlue, White;
+        Red, Green, Yellow, Blue, Violet, LightBlue, White
     }
 }

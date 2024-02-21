@@ -32,19 +32,29 @@ public class EntityBuilder {
         var goods = new int[9];
         var credits = Constants.builders.getLong(startCreditsKey + type).intValue();
         var stats = new EntityStats(credits, goods);
-        var travelManager = new TravelManager(locationsManager, currLocationID, ID);
+        var travelManager = new TravelManager(this.locationsManager, currLocationID, ID);
         var prevAction = EntityActions.none;
 
         return switch (type) {
-            case Player -> new Player(travelManager, entityManager, criminalsManager,
-                        ship, stats, prevAction, ID, "NOTSET");
-            case Pirate -> new Pirate(travelManager, entityManager, criminalsManager,
+            case Pirate -> new Pirate(travelManager, this.entityManager, this.criminalsManager,
                     ship, stats, prevAction, ID);
-            case Trader -> new Trader(travelManager, entityManager, criminalsManager,
+            case Trader -> new Trader(travelManager, this.entityManager, this.criminalsManager,
                     ship, stats, prevAction, ID);
-            case Police -> new Police(travelManager, entityManager, criminalsManager,
+            case Police -> new Police(travelManager, this.entityManager, this.criminalsManager,
                     ship, stats, prevAction, ID, currLocationID);
-            default -> throw new RuntimeException("Unknown EntityType received!");
+            default -> throw new RuntimeException("Incorrect EntityType received!");
         };
+    }
+    public Player newPlayer(int ID, int currLocationID, String name) {
+        var shipType = ShipType.valueOf(Constants.builders.getString(defaultShipKey + "Player"));
+        var ship = ShipBuilder.buildShip(shipType);
+
+        var goods = new int[9];
+        var credits = Constants.builders.getLong(startCreditsKey + "Player").intValue();
+        var stats = new EntityStats(credits, goods);
+        var travelManager = new TravelManager(this.locationsManager, currLocationID, ID);
+        var prevAction = EntityActions.none;
+
+        return new Player(travelManager, ship, stats, name);
     }
 }
