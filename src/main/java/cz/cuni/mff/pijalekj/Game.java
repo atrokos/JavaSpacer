@@ -39,6 +39,7 @@ public class Game  {
             this.entityManager.resetNPCs(this.criminalsManager, this.locationsManager);
             this.locationsManager.updateAllPlanets();
         }
+        // TODO remove comments HERE
 //        if (firstTime) {
 //            this.setPlayerName();
 //            firstTime = false;
@@ -206,7 +207,7 @@ public class Game  {
                     hullCost, player.getCredits());
         }
 
-        this.output.show("0) Cancel repairs\n1) Repair hull");
+        this.output.show("0) Cancel repairs\n1) Repair hull\n\n");
         int input = Input.askNumber(0, 1);
         if (input != 0) {
             player.ownedShip.repairHull(newHullValue);
@@ -235,7 +236,7 @@ public class Game  {
                     fuelCost, player.getCredits());
         }
 
-        this.output.show("0) Go back\n1) Refuel ship");
+        this.output.show("0) Go back\n1) Refuel ship\n\n");
         int input = Input.askNumber(0, 1);
         if (input != 0) {
             player.ownedShip.repairHull(newFuelValue);

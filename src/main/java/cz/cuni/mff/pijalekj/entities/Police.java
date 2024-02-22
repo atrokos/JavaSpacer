@@ -37,7 +37,6 @@ public class Police extends Entity {
 
     @Override
     public OptionalInt play() {
-        System.out.print("Police");
         if (!this.isAlive()) {
             return OptionalInt.empty();
         }

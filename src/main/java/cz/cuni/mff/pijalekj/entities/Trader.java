@@ -37,7 +37,7 @@ public class Trader extends Entity {
 
     @Override
     public OptionalInt play() {
-        System.out.print("Trader");
+
         if (!this.isAlive()) {
             return OptionalInt.empty();
         }
