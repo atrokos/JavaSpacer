@@ -1,12 +1,11 @@
 package cz.cuni.mff.pijalekj;
 
 import cz.cuni.mff.pijalekj.battle.Battle;
+import cz.cuni.mff.pijalekj.builders.ShipBuilder;
 import cz.cuni.mff.pijalekj.constants.Constants;
-import cz.cuni.mff.pijalekj.entities.EntityStats;
-import cz.cuni.mff.pijalekj.entities.GoodsPrices;
-import cz.cuni.mff.pijalekj.entities.Planet;
-import cz.cuni.mff.pijalekj.entities.Player;
+import cz.cuni.mff.pijalekj.entities.*;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
+import cz.cuni.mff.pijalekj.enums.ShipType;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
 import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.LocationsManager;
@@ -40,11 +39,11 @@ public class Game  {
             this.entityManager.resetNPCs(this.criminalsManager, this.locationsManager);
             this.locationsManager.updateAllPlanets();
         }
-        if (firstTime) {
-            this.setPlayerName();
-            firstTime = false;
-        }
-        this.playerPlay();
+//        if (firstTime) {
+//            this.setPlayerName();
+//            firstTime = false;
+//        }
+//        this.playerPlay();
         HashMap<Integer, Integer> fightRequests = this.entityManager.play();
         this.handleBattles(fightRequests);
         this.criminalsManager.updateCriminals();
@@ -64,6 +63,9 @@ public class Game  {
                 this.playerBattle(entry.getKey(), false);
                 continue;
             }
+            if (!(entityManager.getEntity(entry.getKey()) instanceof Police)) {
+                criminalsManager.addCriminal(entry.getKey());
+            }
             Battle battle = new Battle(this.entityManager.getEntity(entry.getKey()),
                     this.entityManager.getEntity(entry.getValue()));
             battle.fight();
@@ -71,11 +73,14 @@ public class Game  {
     }
 
     private void playerBattle(int opponentID, boolean startedByPlayer) {
-        //TODO this
+        // TODO This + ask player if they want to fight someone present when traveling
     }
 
     private void playerPlay() throws Exception {
         Player player = entityManager.getPlayer();
+        if (player.isTraveling()) {
+            player.travel();
+        }
         while (!player.isTraveling()) {
             try {
                 this.output.showMainScreen();
@@ -89,8 +94,21 @@ public class Game  {
                 break;
             }
         }
-        if (player.isTraveling()) {
-            player.travel();
+    }
+
+    private void scanNeighbors(Planet planet) throws IOException {
+        var neighbors = locationsManager.getNeighborsOf(planet.getPlanetID());
+
+        while (true) {
+            this.output.clearScreen();
+            this.output.show("Currently scanned planet: %s\n", planet.getName());
+            this.output.goodsAnalysis(planet);
+            this.output.showPlanetNeighbors(planet.getPlanetID(), "Where to seek next?\n");
+            int input = Input.askNumber(0, neighbors.length);
+            if (input == 0) {
+                return;
+            }
+            scanNeighbors(locationsManager.getPlanet(neighbors[input-1]));
         }
     }
 
@@ -111,12 +129,12 @@ public class Game  {
         while (true) {
             int freeSpace = player.getMaxCargo() - player.getCurrCargo();
             this.output.showBuySellScreen();
-            var choice = Input.askNumber(0, 9);
+            var choice = Input.askNumber(0, GoodsIndex.values().length);
             if (choice == 0) {
                 return;
             }
-            choice -= 1;
-            this.output.show("How many %s would you like to buy or sell? ",
+            choice -= 1; // Chosen number is always +1 higher than the actual index in the array (0 is for going back)
+            this.output.show("How many %s would you like to buy or sell?\n",
                     GoodsIndex.values()[choice].toString());
             while (true) {
                 var amount = Input.askNumber(-playerGoods.getGoodAmount(choice), currPlanetGoods.getGoodAmount(choice));
@@ -225,15 +243,43 @@ public class Game  {
         }
     }
 
-    public void buyNewShip() {
+    public void buyNewShip() throws IOException {
+        Player player = entityManager.getPlayer();
+        this.output.showShipDealership();
+        if (player.getCurrCargo() > 0) {
+            this.output.show("\nYou have some goods in your cargo. Sell them so that you can buy the new ship!\n");
+//            this.output.showShipDealership();
+            int choice = Input.askNumber(0, 0);
+            if (choice == 0) {
+                return;
+            }
+        }
 
+        while (true) {
+            int choice = Input.askNumber(0, ShipType.values().length);
+            if (choice == 0) {
+                return;
+            }
+            ShipType chosenShip = ShipType.values()[choice - 1];
+            int currShipPrice = Constants.builders.getLong
+                    ("Ships.Prices." + player.ownedShip.getShipType()).intValue();
+            int shipPrice = Constants.builders.getLong("Ships.Prices." + chosenShip).intValue();
+            if (shipPrice > player.getCredits()) {
+                this.output.show("\nSorry, you cannot afford this ship!\n");
+            } else {
+                player.ownedShip = ShipBuilder.buildShip(chosenShip);
+                player.entityStats.removeCredits(shipPrice);
+                player.entityStats.addCredits(currShipPrice);
+                break;
+            }
+        }
     }
 
     public void goBack() throws Exception {
         throw new Exception();
     }
-    private void seekMarkets() {
-
+    private void seekMarkets() throws IOException {
+        scanNeighbors(entityManager.getPlayer().getCurrPlanet());
     }
     private void travelToPlanet() throws Exception {
         Player player = entityManager.getPlayer();
@@ -255,7 +301,6 @@ public class Game  {
             }
         }
     }
-    // TODO Is anything added to criminalsList?
     private final Output output = new Output();
     private class Output {
         private final PrintStream console = System.out;
@@ -263,6 +308,25 @@ public class Game  {
             console.print("\033c");
         }
 
+        private void goodsAnalysis(Planet otherPlanet) {
+            var currPlanetGoods = entityManager.getPlayer().getCurrPlanet().getGoodsPrices();
+            var otherPlanetGoods = otherPlanet.getGoodsPrices();
+
+            this.show("Name         Amount Price\n");
+            for (var index : GoodsIndex.values()){
+                int priceOther = otherPlanetGoods.getPrice(index);
+                int priceDiff = priceOther - currPlanetGoods.getPrice(index);
+                int goodAmount = otherPlanetGoods.getGoodAmount(index);
+
+                this.show("%s%s%d%s%d (%d)\n",
+                        index,
+                        " ".repeat(13 - index.toString().length()),
+                        goodAmount,
+                        " ".repeat(7 - getDigits(goodAmount)),
+                        priceOther,
+                        priceDiff);
+            }
+        }
         private void showTravelOptions(int currPlanetID) {
             this.clearScreen();
             this.show("Fuel: %d\n", entityManager.getPlayer().getCurrFuel());
@@ -280,6 +344,19 @@ public class Game  {
             }
             this.showSimpleOptions(options);
             this.show("\n" + msg);
+        }
+        private void showShipDealership() {
+            this.clearScreen();
+            this.show("Welcome to our shop! We have these ships ready for you to buy:\n");
+            this.show("# Ship       Price\n");
+            for (var shipType : ShipType.values()) {
+                this.show("%d) %s%s%d\n",
+                        shipType.ordinal() + 1,
+                        shipType,
+                        " ".repeat(10 - shipType.toString().length()),
+                        Constants.builders.getLong("Ships.Prices." + shipType));
+            }
+            this.show("Credits: %d\n\n0) Go back\n", entityManager.getPlayer().getCredits());
         }
         private void showMainScreen() {
             Player player = entityManager.getPlayer();
@@ -332,7 +409,7 @@ public class Game  {
             this.show("Shields: %s\n", ship.getStats().shields.toString());
             this.show("Cargo:   %d/%d\n", player.getCurrCargo(), player.getMaxCargo());
             this.show("Fuel:    %s\n", ship.getStats().fuel.toString());
-            this.show("Type:    %s\n", ship.getShipType().toString());
+            this.show("Type:    %s\n\n", ship.getShipType().toString());
         }
         private void askPlayerName() {
             this.show("Welcome to Space Trader! Enter your name:\n");
@@ -365,6 +442,7 @@ public class Game  {
 
         private static int askNumber(int minimum, int maximum) throws IOException {
             while (true) {
+                System.out.print(">>> ");
                 String line = bufferedReader.readLine();
                 try {
                     int optionNumber = Integer.parseInt(line);

@@ -66,7 +66,7 @@ public class EntityStats {
         this.ownedGoods[good.ordinal()] -= amount;
     }
 
-    public int transferAllGoods(EntityStats from, int limit) {
+    public void transferAllGoods(EntityStats from, int limit) {
         assert limit >= 0;
         for (var index : GoodsIndex.values()) {
             int toTake = Math.min(from.getGoodAmount(index), limit);
@@ -74,6 +74,5 @@ public class EntityStats {
             from.removeGood(index, toTake);
             limit -= toTake;
         }
-        return limit;
     }
 }

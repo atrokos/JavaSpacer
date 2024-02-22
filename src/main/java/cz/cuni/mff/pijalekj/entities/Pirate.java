@@ -39,6 +39,7 @@ public class Pirate extends Entity {
 
     @Override
     public OptionalInt play() {
+        System.out.print("Pirate");
         if (!this.isAlive()) {
             return OptionalInt.empty();
         }

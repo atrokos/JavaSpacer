@@ -37,6 +37,7 @@ public class Police extends Entity {
 
     @Override
     public OptionalInt play() {
+        System.out.print("Police");
         if (!this.isAlive()) {
             return OptionalInt.empty();
         }
@@ -70,7 +71,7 @@ public class Police extends Entity {
 
     private OptionalInt findCriminal() {
         return this.travelManager.getPresentEntities().stream().mapToInt(i -> i)
-                .filter(ID -> this.criminalsManager.isCriminal(ID))
+                .filter(ID -> this.criminalsManager.isCriminal(ID) && ID != this.entityID)
                 .findFirst();
     }
 
