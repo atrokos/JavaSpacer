@@ -40,4 +40,8 @@ public class MaxValue {
     public void setToMax() {
         this.curr = this.max;
     }
+    @Override
+    public String toString() {
+        return "%d/%d".formatted(this.curr, this.max);
+    }
 }

@@ -1,7 +1,7 @@
 package cz.cuni.mff.pijalekj.managers;
 
 import cz.cuni.mff.pijalekj.entities.Planet;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -9,12 +9,12 @@ import java.util.List;
 public class LocationsManager {
     private final int[][] adjacencyMatrix;
     private final List<List<HashSet<Integer>>> presentEntities;
-    private final List<HashSet<Integer>> neighborList;
+    private final List<Integer[]> neighborList;
     private final Planet[] planets;
 
     public LocationsManager(int[][] adjacencyMatrix,
                             List<List<HashSet<Integer>>> presentEntities,
-                            List<HashSet<Integer>> neighborList,
+                            List<Integer[]> neighborList,
                             Planet[] planets)
     {
         this.adjacencyMatrix = adjacencyMatrix;
@@ -23,7 +23,7 @@ public class LocationsManager {
         this.planets = planets;
     }
 
-    public HashSet<Integer> getNeighbors(Integer planetID) {
+    public Integer[] getNeighborsOf(Integer planetID) {
         return this.neighborList.get(planetID);
     }
 
@@ -114,5 +114,9 @@ public class LocationsManager {
             }
             throw new RuntimeException("Entity with ID " + ID + " was not found!");
         }
+    }
+
+    public String getPlanetName(int ID) {
+        return planets[ID].getName();
     }
 }

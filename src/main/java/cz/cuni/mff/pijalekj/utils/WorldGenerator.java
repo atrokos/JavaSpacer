@@ -75,7 +75,12 @@ public class WorldGenerator {
             }
         }
 
-        return new LocationsManager(adjacencyMatrix, presentEntities, neighborList, planets);
+        List<Integer[]> neighborListArray = new ArrayList<>();
+        for (var entry : neighborList) {
+            neighborListArray.add(entry.toArray(new Integer[0]));
+        }
+
+        return new LocationsManager(adjacencyMatrix, presentEntities, neighborListArray, planets);
     }
 
     private static void connectPlanets(int[][] adjMatrix, List<HashSet<Integer>> neighbors,
@@ -102,6 +107,7 @@ public class WorldGenerator {
             }
         }
         em.setEntities(entities.toArray(Entity[]::new));
+        em.setPlayer(eb.newPlayer(-1, noOfPlanets / 2, "NOTSET"));
     }
 
     public static void populateWorld(LocationsManager lm, EntityManager em) {

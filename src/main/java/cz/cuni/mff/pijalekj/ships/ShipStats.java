@@ -1,7 +1,7 @@
 package cz.cuni.mff.pijalekj.ships;
 
 public class ShipStats {
-    public MaxValue health;
+    public MaxValue hull;
 
     /**
      *  Cargo capacity of the ship.
@@ -33,9 +33,9 @@ public class ShipStats {
      */
     public int fleeChance = 0;
 
-    public ShipStats(MaxValue health, int cargo, MaxValue fuel,
+    public ShipStats(MaxValue hull, int cargo, MaxValue fuel,
                      MaxValue shields, int damage, int maneuver) {
-        this.health = health;
+        this.hull = hull;
         this.maxCargo = cargo;
         this.fuel = fuel;
         this.shields = shields;

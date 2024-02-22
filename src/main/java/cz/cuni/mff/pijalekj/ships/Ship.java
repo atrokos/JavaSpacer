@@ -25,7 +25,7 @@ public class Ship {
     }
 
     public void destroy() {
-        this.shipStats.health.setCurr(0);
+        this.shipStats.hull.setCurr(0);
     }
     public void refuel() {
         this.shipStats.fuel.setToMax();
@@ -41,7 +41,7 @@ public class Ship {
         {
             this.shipStats.shields.setCurr(0);
             // Addition, because carry_damage is negative in this case
-            this.shipStats.health.setCurr(this.shipStats.health.getCurr() + carry_damage);
+            this.shipStats.hull.setCurr(this.shipStats.hull.getCurr() + carry_damage);
         }
         else
         {
@@ -50,14 +50,14 @@ public class Ship {
     }
 
     public void repairHull(int newHealth){
-        assert newHealth + this.shipStats.health.getCurr() <= this.shipStats.health.getMax():
+        assert newHealth + this.shipStats.hull.getCurr() <= this.shipStats.hull.getMax():
                 "Ship was told to repair more than it can be.";
 
-        this.shipStats.health.changeBy(newHealth);
+        this.shipStats.hull.changeBy(newHealth);
     }
 
     public void repairHull() {
-        this.shipStats.health.setToMax();
+        this.shipStats.hull.setToMax();
     }
 
     public ShipSize getShipSize() {
@@ -85,7 +85,11 @@ public class Ship {
     }
 
     public boolean isAlive() {
-        return this.shipStats.health.getCurr() > 0;
+        return this.shipStats.hull.getCurr() > 0;
+    }
+
+    public void burnFuel() {
+        this.shipStats.fuel.changeBy(-1);
     }
 
 }

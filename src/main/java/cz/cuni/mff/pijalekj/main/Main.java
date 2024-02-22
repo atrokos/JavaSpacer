@@ -9,7 +9,7 @@ import cz.cuni.mff.pijalekj.utils.WorldGenerator;
 import java.io.IOException;
 
 public class Main {
-    public static void main(String... args) throws IOException {
+    public static void main(String... args) throws Exception {
         EntityManager em = new EntityManager();
         LocationsManager lm = WorldGenerator.generateLocations(500);
         CriminalsManager cm = new CriminalsManager();
@@ -18,8 +18,13 @@ public class Main {
         WorldGenerator.populateWorld(lm, em);
         Game game = new Game(lm, cm, em);
 
-        while (game.play()) {
-            continue;
+        try {
+            while (game.play()) {
+                continue;
+            }
+        } catch (Exception e) {
+            System.out.printf("Fatal error: The game cannot recover. Exception details:\n%s", e.getMessage());
+            System.err.printf("Fatal error: The game cannot recover. Exception details:\n%s", e.getMessage());
         }
     }
 }

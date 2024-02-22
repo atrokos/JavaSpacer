@@ -4,5 +4,5 @@ import java.io.IOException;
 
 @FunctionalInterface
 public interface RunnableWException {
-    void run() throws IOException;
+    void run() throws Exception;
 }

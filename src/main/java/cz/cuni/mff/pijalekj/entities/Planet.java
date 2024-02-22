@@ -10,10 +10,10 @@ import java.util.stream.IntStream;
 
 public class Planet {
     private final String name;
-    private final long planetID;
-    private final GoodsPrices goodsPrices;
+    private final int planetID;
+    private GoodsPrices goodsPrices;
     private final PlanetIndustryType planetType;
-    public Planet(String name, PlanetIndustryType planetType, long planetID, GoodsPrices goodsPrices) {
+    public Planet(String name, PlanetIndustryType planetType, int planetID, GoodsPrices goodsPrices) {
         this.name = name;
         this.planetID = planetID;
         this.goodsPrices = goodsPrices;
@@ -22,7 +22,7 @@ public class Planet {
     public String getName() {
         return this.name;
     }
-    public long getPlanetID() {
+    public int getPlanetID() {
         return this.planetID;
     }
     public GoodsPrices getGoodsPrices() {

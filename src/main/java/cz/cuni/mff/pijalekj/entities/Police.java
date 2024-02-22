@@ -37,7 +37,6 @@ public class Police extends Entity {
 
     @Override
     public OptionalInt play() {
-        System.out.println("Police is playing!");
         if (!this.isAlive()) {
             return OptionalInt.empty();
         }
@@ -61,7 +60,7 @@ public class Police extends Entity {
         }
 
         // Otherwise, travel to a random neighbor
-        var neighbors = this.travelManager.getNeighbors().toArray(Integer[]::new);
+        var neighbors = this.travelManager.getNeighbors();
         int randomIndex = new Random().nextInt(neighbors.length);
 
         this.prevAction = EntityActions.travelPrep;

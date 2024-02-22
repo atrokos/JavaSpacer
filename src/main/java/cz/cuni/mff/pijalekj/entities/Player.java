@@ -3,10 +3,8 @@ package cz.cuni.mff.pijalekj.entities;
 import cz.cuni.mff.pijalekj.managers.TravelManager;
 import cz.cuni.mff.pijalekj.ships.Ship;
 
-import java.util.Arrays;
-
 public class Player {
-    public final String name;
+    public String name;
     private final TravelManager travelManager;
     public Ship ownedShip;
     public final EntityStats entityStats;
@@ -20,7 +18,7 @@ public class Player {
         this.ownedShip.destroy();
     }
     public boolean isAlive() {
-        return this.ownedShip.getStats().health.getCurr() > 0;
+        return this.ownedShip.getStats().hull.getCurr() > 0;
     }
     public int getCurrFuel() {
         return this.ownedShip.getStats().fuel.getCurr();
@@ -38,15 +36,31 @@ public class Player {
         return this.entityStats.getCredits();
     }
     public int getCurrHull() {
-        return this.ownedShip.getStats().health.getCurr();
+        return this.ownedShip.getStats().hull.getCurr();
     }
     public int getMaxHull() {
-        return this.ownedShip.getStats().health.getMax();
+        return this.ownedShip.getStats().hull.getMax();
     }
     public Planet getCurrPlanet() {
         return this.travelManager.getCurrLocation();
     }
     public Planet getNextPlanet() {
         return this.travelManager.getNextLocation();
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void travelTo(int neighborID) {
+        travelManager.travelStart(neighborID);
+    }
+
+    public boolean isTraveling() {
+        return travelManager.isTraveling();
+    }
+
+    public void travel() {
+        travelManager.travel();
+        ownedShip.burnFuel();
     }
 }

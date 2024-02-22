@@ -63,11 +63,11 @@ public class TravelManager {
         return this.locMan.getPlanet(planetID);
     }
 
-    public HashSet<Integer> getNeighbors(int planetID) {
-        return this.locMan.getNeighbors(planetID);
+    public Integer[] getNeighbors(int planetID) {
+        return this.locMan.getNeighborsOf(planetID);
     }
 
-    public HashSet<Integer> getNeighbors() {
+    public Integer[] getNeighbors() {
         return this.getNeighbors(this.currLocID);
     }
 

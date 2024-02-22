@@ -77,7 +77,7 @@ public abstract class Entity {
     }
 
     public void kill() {
-        this.ownedShip.getStats().health.setCurr(0);
+        this.ownedShip.getStats().hull.setCurr(0);
     }
 
     public boolean isTraveling() {
@@ -92,14 +92,14 @@ public abstract class Entity {
     }
 
     protected void travel() {
-        this.ownedShip.getStats().fuel.changeBy(-1);
+        this.ownedShip.burnFuel();
         this.travelManager.travel();
     }
 
     protected int outSustain(Ship victimShip) {
-        var myHealth = this.ownedShip.getStats().health.getCurr() +
+        var myHealth = this.ownedShip.getStats().hull.getCurr() +
                 this.ownedShip.getStats().shields.getCurr();
-        var victimHealth = victimShip.getStats().health.getCurr() +
+        var victimHealth = victimShip.getStats().hull.getCurr() +
                 victimShip.getStats().shields.getCurr();
 
         var attackerDamage = Ship.damageOutput(this.ownedShip, victimShip);
@@ -129,7 +129,7 @@ public abstract class Entity {
         }
 
         // Hull
-        int hullDiff = this.ownedShip.getStats().health.getMax() - this.ownedShip.getStats().health.getCurr();
+        int hullDiff = this.ownedShip.getStats().hull.getMax() - this.ownedShip.getStats().hull.getCurr();
         neededCredits = fuelDiff * Constants.fuelCost;
         if (hullDiff > 0 && neededCredits <= this.entityStats.getCredits()) {
             this.entityStats.removeCredits(neededCredits);

@@ -38,6 +38,9 @@ public class EntityManager {
     public void setPlayer(Player player) {
         this.player = player;
     }
+    public void setPlayerName(String name) {
+        this.player.setName(name);
+    }
 
     /// This method lets Entities play and collects their targets (if any).
     /// Everyone can have at most 1 attacker.

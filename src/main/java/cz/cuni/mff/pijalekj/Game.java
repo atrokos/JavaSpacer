@@ -1,21 +1,25 @@
 package cz.cuni.mff.pijalekj;
 
 import cz.cuni.mff.pijalekj.battle.Battle;
+import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.entities.EntityStats;
 import cz.cuni.mff.pijalekj.entities.GoodsPrices;
+import cz.cuni.mff.pijalekj.entities.Planet;
 import cz.cuni.mff.pijalekj.entities.Player;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
 import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.LocationsManager;
+import cz.cuni.mff.pijalekj.ships.Ship;
 import cz.cuni.mff.pijalekj.utils.RunnableWException;
-import org.fusesource.jansi.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class Game  {
@@ -23,8 +27,7 @@ public class Game  {
     private final CriminalsManager criminalsManager;
     private final EntityManager entityManager;
     private final GameClock clock = new GameClock();
-    private final ArrayList<Input.Option> mainMenuOptions= new ArrayList<>();
-    private boolean continuePlay = true;
+    private boolean firstTime = true;
 
     public Game(LocationsManager lm, CriminalsManager cm, EntityManager em) {
         this.locationsManager = lm;
@@ -32,16 +35,14 @@ public class Game  {
         this.entityManager = em;
     }
 
-    public void initGame() throws IOException {
-        System.out.print("Welcome to SpaceTrader!\nEnter name: ");
-        String name = Input.askString(String::isBlank);
-    }
-
-    public boolean play() throws IOException {
+    public boolean play() throws Exception {
         if (this.clock.tick()) {
             this.entityManager.resetNPCs(this.criminalsManager, this.locationsManager);
             this.locationsManager.updateAllPlanets();
-            this.locationsManager.bigCheck(this.entityManager.getEntities().length);
+        }
+        if (firstTime) {
+            this.setPlayerName();
+            firstTime = false;
         }
         this.playerPlay();
         HashMap<Integer, Integer> fightRequests = this.entityManager.play();
@@ -73,26 +74,35 @@ public class Game  {
         //TODO this
     }
 
-    private void playerPlay() throws IOException {
-        this.continuePlay = true;
-        /*
-        WORKFLOW:
-        1) Show main screen with options
-        2) Read input
-        3) Perform the selected action
-        4) GOTO 1)
-        * */
-        while (this.continuePlay) {
-            this.output.showMainScreen();
-            Input.askOptions(
-                    new Input.Option("Quit game", this::quitGame),
-                    new Input.Option("Buy/sell goods", this::buySellGoods),
-                    new Input.Option("Manage ship", this::manageShip),
-                    new Input.Option("Seek markets", this::seekMarkets),
-                    new Input.Option("Travel to another planet", this::travelToPlanet));
+    private void playerPlay() throws Exception {
+        Player player = entityManager.getPlayer();
+        while (!player.isTraveling()) {
+            try {
+                this.output.showMainScreen();
+                Input.askOptions(
+                        new Input.Option("Quit game", this::quitGame),
+                        new Input.Option("Buy/sell goods", this::buySellGoods),
+                        new Input.Option("Manage ship", this::manageShip),
+                        new Input.Option("Seek markets", this::seekMarkets),
+                        new Input.Option("Travel to another planet", this::travelToPlanet));
+            } catch (Exception e) {
+                break;
+            }
+        }
+        if (player.isTraveling()) {
+            player.travel();
         }
     }
 
+    private void setPlayerName() throws IOException {
+        this.output.clearScreen();
+        this.output.askPlayerName();
+        String name = Input.askString(String::isBlank, this.output.console);
+        if (name == null) {
+            throw new IOException("Player name is null; terminating.");
+        }
+        this.entityManager.setPlayerName(name);
+    }
     private void buySellGoods() throws IOException {
         Player player = this.entityManager.getPlayer();
         var currPlanetGoods = this.entityManager.getPlayer().getCurrPlanet().getGoodsPrices();
@@ -105,7 +115,8 @@ public class Game  {
             if (choice == 0) {
                 return;
             }
-            this.output.show("How much of %s would you like to buy or sell? ",
+            choice -= 1;
+            this.output.show("How many %s would you like to buy or sell? ",
                     GoodsIndex.values()[choice].toString());
             while (true) {
                 var amount = Input.askNumber(-playerGoods.getGoodAmount(choice), currPlanetGoods.getGoodAmount(choice));
@@ -122,51 +133,176 @@ public class Game  {
                     playerGoods.addGood(choice, amount);
                     playerGoods.removeCredits(price);
                     currPlanetGoods.removeGood(choice, amount);
+                    break;
                 } else if (amount == 0) { // Cancel
                     break;
                 } else { // Selling
                     playerGoods.removeGood(choice, -amount);
                     playerGoods.addCredits(-price);
                     currPlanetGoods.addGood(choice, -amount);
+                    break;
                 }
             }
         }
     }
-    private void quitGame() {
-        this.continuePlay = false;
+    private void quitGame() throws Exception {
         this.entityManager.getPlayer().kill();
+        throw new Exception();
     }
     private void manageShip() {
+        Player player = this.entityManager.getPlayer();
+        while (true) {
+            try {
+                this.output.showShipInfo();
 
+                Input.askOptions(
+                        new Input.Option("Go back", this::goBack),
+                        new Input.Option("Repair hull", this::repairHull),
+                        new Input.Option("Refuel ship", this::refuelShip),
+                        new Input.Option("Buy a new ship", this::buyNewShip)
+                );
+            } catch (Exception ignored) {
+                break;
+            }
+        }
+    }
+    public void repairHull() throws IOException {
+        Player player = this.entityManager.getPlayer();
+        int hullDiff = player.getMaxHull() - player.getCurrHull();
+        int hullCost = hullDiff * Constants.repairCost;
+        int newHullValue = player.getMaxHull();
+
+        this.output.clearScreen();
+        if (hullCost > player.getCredits()) {
+            int maxHullPossible = (player.getCredits() / Constants.repairCost);
+            int newCost = maxHullPossible * Constants.repairCost;
+            newHullValue = player.getCurrHull() + maxHullPossible;
+
+            this.output.show("Fully repairing the hull would cost %d, which you can't afford.\n", hullCost);
+            this.output.show("You can repair your ship to %d, which would cost %d. You have %d credits.\n",
+                    newHullValue, newCost, player.getCredits());
+
+            hullCost = newCost;
+        } else {
+            this.output.show("Repairing the ship to full costs %d credits (you have %d).\n",
+                    hullCost, player.getCredits());
+        }
+
+        this.output.show("0) Cancel repairs\n1) Repair hull");
+        int input = Input.askNumber(0, 1);
+        if (input != 0) {
+            player.ownedShip.repairHull(newHullValue);
+            player.entityStats.removeCredits(hullCost);
+        }
+    }
+    public void refuelShip() throws IOException {
+        Player player = this.entityManager.getPlayer();
+        int fuelDiff = player.getMaxFuel() - player.getCurrFuel();
+        int fuelCost = fuelDiff * Constants.fuelCost;
+        int newFuelValue = player.getMaxFuel();
+
+        this.output.clearScreen();
+        if (fuelCost > player.getCredits()) {
+            int maxFuelPossible = (player.getCredits() / Constants.fuelCost);
+            int newCost = maxFuelPossible * Constants.fuelCost;
+            newFuelValue = player.getCurrFuel() + maxFuelPossible;
+            this.output.show("Fully refueling your ship would cost %d, which you can't afford.\n", fuelCost);
+            this.output.show("You can refuel your ship to %d, which would cost %d. You have %d credits.\n",
+                    newFuelValue, newCost, player.getCredits());
+            this.output.show("0) Cancel repairs\n1) Repair hull");
+
+            fuelCost = newCost;
+        } else {
+            this.output.show("Fully refueling your ship costs %d credits (you have %d).\n",
+                    fuelCost, player.getCredits());
+        }
+
+        this.output.show("0) Go back\n1) Refuel ship");
+        int input = Input.askNumber(0, 1);
+        if (input != 0) {
+            player.ownedShip.repairHull(newFuelValue);
+            player.entityStats.removeCredits(fuelCost);
+        }
+    }
+
+    public void buyNewShip() {
+
+    }
+
+    public void goBack() throws Exception {
+        throw new Exception();
     }
     private void seekMarkets() {
 
     }
-    private void travelToPlanet(){
+    private void travelToPlanet() throws Exception {
+        Player player = entityManager.getPlayer();
+        int currPlanetID = player.getCurrPlanet().getPlanetID();
+        var neighbors = locationsManager.getNeighborsOf(currPlanetID);
 
+        this.output.showTravelOptions(currPlanetID);
+        while (true) {
+            int choice = Input.askNumber(0, neighbors.length);
+            if (choice == 0) {
+                return;
+            }
+            choice -= 1; // Chosen number is always +1 higher than the actual index in the array (0 is for going back)
+            if (locationsManager.getDistanceBetween(currPlanetID, neighbors[choice]) > player.getCurrFuel()) {
+                this.output.show("You don't have enough fuel for this trip!\n");
+            } else {
+                Game.this.entityManager.getPlayer().travelTo(neighbors[choice]);
+                throw new Exception();
+            }
+        }
     }
-
+    // TODO Is anything added to criminalsList?
     private final Output output = new Output();
     private class Output {
-        private final AnsiPrintStream console = AnsiConsole.out();
+        private final PrintStream console = System.out;
         private void clearScreen() {
-            console.print(Ansi.ansi().eraseScreen());
+            console.print("\033c");
+        }
+
+        private void showTravelOptions(int currPlanetID) {
+            this.clearScreen();
+            this.show("Fuel: %d\n", entityManager.getPlayer().getCurrFuel());
+            this.showPlanetNeighbors(currPlanetID, "Where would you like to travel?\n");
+        }
+
+        private void showPlanetNeighbors(int planetID, String msg) {
+            var neighbors = locationsManager.getNeighborsOf(planetID);
+            List<String> options = new ArrayList<>();
+            options.add("Go back");
+            for (var neighbor : neighbors) {
+                options.add("%s (%d jumps)".formatted(
+                        locationsManager.getPlanetName(neighbor),
+                        locationsManager.getDistanceBetween(planetID, neighbor)));
+            }
+            this.showSimpleOptions(options);
+            this.show("\n" + msg);
         }
         private void showMainScreen() {
-            Player player = Game.this.entityManager.getPlayer();
+            Player player = entityManager.getPlayer();
 
             this.clearScreen();
             this.show("Current planet: %s (%s)\n", player.getCurrPlanet().getName(),
                     player.getCurrPlanet().getPlanetType());
             this.show("Credits: %d\n", player.getCredits());
-            this.show("Hull:  %d/%d\n", player.getCurrHull(), player.getMaxHull());
-            this.show("Fuel:  %d/%d\n", player.getCurrFuel(), player.getMaxFuel());
-            this.show("Cargo: %d/%d\n", player.getCurrCargo(), player.getMaxCargo());
+            this.show("Hull:    %d/%d\n", player.getCurrHull(), player.getMaxHull());
+            this.show("Fuel:    %d/%d\n", player.getCurrFuel(), player.getMaxFuel());
+            this.show("Cargo:   %d/%d\n\n", player.getCurrCargo(), player.getMaxCargo());
+        }
+
+        private void showSimpleOptions(List<String> options) {
+            for (int i = 0; i < options.size(); ++i) {
+                this.show("%d) %s\n", i, options.get(i));
+            }
         }
 
         private void showBuySellScreen() {
-            EntityStats stats = Game.this.entityManager.getPlayer().entityStats;
-            GoodsPrices goodsPrices = Game.this.entityManager.getPlayer().getCurrPlanet().getGoodsPrices();
+            Player player = Game.this.entityManager.getPlayer();
+            EntityStats stats = player.entityStats;
+            GoodsPrices goodsPrices = player.getCurrPlanet().getGoodsPrices();
 
             this.clearScreen();
             this.show("#  Type        Cargo Planet Price\n");
@@ -182,13 +318,26 @@ public class Game  {
                         goodsPrices.getPrice(index)
                         );
             }
-            this.show("Credits: %d\n\n", stats.getCredits());
-            this.show("Enter good number to buy or sell it\n0) To go back\n");
+            this.show("Credits: %d\n", stats.getCredits());
+            this.show("Cargo:   %d/%d\n\n", player.getCurrCargo(), player.getMaxCargo());
+            this.show("0) Go back\nEnter good number to buy or sell it\n");
         }
         private void showShipInfo() {
-            EntityStats stats = Game.this.entityManager.getPlayer().entityStats;
+            Player player = Game.this.entityManager.getPlayer();
+            Ship ship = player.ownedShip;
+
+            this.clearScreen();
             this.show("Your ship's statistics:\n");
+            this.show("Hull:    %s\n", ship.getStats().hull.toString());
+            this.show("Shields: %s\n", ship.getStats().shields.toString());
+            this.show("Cargo:   %d/%d\n", player.getCurrCargo(), player.getMaxCargo());
+            this.show("Fuel:    %s\n", ship.getStats().fuel.toString());
+            this.show("Type:    %s\n", ship.getShipType().toString());
         }
+        private void askPlayerName() {
+            this.show("Welcome to Space Trader! Enter your name:\n");
+        }
+
         private void show(String format, Object... objects) {
             console.printf(format, objects);
         }
@@ -206,7 +355,7 @@ public class Game  {
     private static class Input {
         private static final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
         public record Option(String msg, RunnableWException action) {}
-        private static void askOptions(Option... options) throws IOException {
+        private static void askOptions(Option... options) throws Exception {
             for (int i = 0; i < options.length; ++i) {
                 System.out.printf("%d) %s\n", i, options[i].msg());
             }
@@ -229,9 +378,11 @@ public class Game  {
             }
         }
 
-        private static String askString(Predicate<String> predicate) throws IOException {
+        private static String askString(Predicate<String> predicate, PrintStream stream) throws IOException {
             String input;
-            while (!predicate.test(input = bufferedReader.readLine())) {}
+            while (predicate.test(input = bufferedReader.readLine())) {
+                stream.println("Name cannot be blank!");
+            }
 
             return input;
         }
