@@ -45,7 +45,7 @@ public class EntityManager {
         var results = new HashMap<Integer, Integer>();
         var victims = new HashSet<Integer>();
 
-        for (int i = 1; i < this.entities.length; i++) {
+        for (int i = 0; i < this.entities.length; i++) {
             OptionalInt result = this.entities[i].play();
             if (result.isEmpty()) {
                 continue;

@@ -1,27 +1,27 @@
 package cz.cuni.mff.pijalekj;
 
 import cz.cuni.mff.pijalekj.battle.Battle;
-import cz.cuni.mff.pijalekj.builders.EntityBuilder;
-import cz.cuni.mff.pijalekj.entities.Entity;
+import cz.cuni.mff.pijalekj.entities.EntityStats;
+import cz.cuni.mff.pijalekj.entities.Planet;
 import cz.cuni.mff.pijalekj.entities.Player;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
 import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.LocationsManager;
+import cz.cuni.mff.pijalekj.ships.Ship;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.function.Predicate;
 
-public class Game {
+public class Game  {
     private final LocationsManager locationsManager;
     private final CriminalsManager criminalsManager;
     private final EntityManager entityManager;
     private final GameClock clock = new GameClock();
+    private final ArrayList<Input.Option> mainMenuOptions= new ArrayList<>();
     public Game(LocationsManager lm, CriminalsManager cm, EntityManager em) {
         this.locationsManager = lm;
         this.criminalsManager = cm;
@@ -39,12 +39,12 @@ public class Game {
             this.locationsManager.updateAllPlanets();
             this.locationsManager.bigCheck(this.entityManager.getEntities().length);
         }
-
+        this.playerPlay();
         HashMap<Integer, Integer> fightRequests = this.entityManager.play();
         this.handleBattles(fightRequests);
         this.criminalsManager.updateCriminals();
 
-        return // TODO return state of the player;
+        return this.entityManager.getPlayer().isAlive();
     }
 
     private void handleBattles(HashMap<Integer, Integer> fightRequests) {
@@ -69,10 +69,47 @@ public class Game {
         //TODO this
     }
 
-    private void playerPlay() {
-
+    private void playerPlay() throws IOException {
+        /*
+        WORKFLOW:
+        1) Show main screen with options
+        2) Read input
+        3) Perform the selected action
+        4) GOTO 1)
+        * */
+        this.output.showMainScreen();
+        Input.askOptions(
+                new Input.Option("Quit game", this::quitGame),
+                new Input.Option("Buy/sell goods", this::buySellGoods));
     }
 
+    private void buySellGoods() {
+
+    }
+    private void quitGame() {
+
+    }
+    private void manageShip() {
+
+    }
+    private void
+
+    private final Output output = new Output();
+    private class Output {
+        private void showMainScreen() {
+            Player player = Game.this.entityManager.getPlayer();
+            System.out.printf("Current planet: %s (%s)\n", player.getCurrPlanet().getName(),
+                    player.getCurrPlanet().getPlanetType());
+            System.out.printf("Credits: %d\n", player.getCredits());
+            System.out.printf("Hull:  %s\n", xOutOfy(player.getCurrHull(), player.getMaxHull()));
+            System.out.printf("Fuel:  %s\n", xOutOfy(player.getCurrFuel(), player.getMaxFuel()));
+            System.out.printf("Cargo: %s\n", xOutOfy(player.getCurrCargo(), player.getMaxCargo()));
+        }
+
+        private static <T> String xOutOfy(T curr, T max) {
+            return String.format("%s / %s", curr.toString(), max.toString());
+        }
+    }
     private static class Input {
         private static final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
         public record Option(String msg, Runnable action) {}
