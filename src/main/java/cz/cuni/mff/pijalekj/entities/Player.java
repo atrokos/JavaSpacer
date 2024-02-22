@@ -16,6 +16,9 @@ public class Player {
         this.entityStats = entityStats;
         this.ownedShip = ownedShip;
     }
+    public void kill() {
+        this.ownedShip.destroy();
+    }
     public boolean isAlive() {
         return this.ownedShip.getStats().health.getCurr() > 0;
     }

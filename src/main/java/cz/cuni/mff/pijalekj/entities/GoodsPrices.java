@@ -1,5 +1,7 @@
 package cz.cuni.mff.pijalekj.entities;
 
+import cz.cuni.mff.pijalekj.enums.GoodsIndex;
+
 public class GoodsPrices {
     private final int[] goods;
     private final int[] prices;
@@ -12,6 +14,11 @@ public class GoodsPrices {
     public int getGoodAmount(int good) {
         assert this.goods[good] >= 0: "Good " + good + " is < 0!";
         return this.goods[good];
+    }
+
+    public int getGoodAmount(GoodsIndex good) {
+        assert this.goods[good.ordinal()] >= 0: "Good " + good + " is < 0!";
+        return this.goods[good.ordinal()];
     }
 
     public void addGood(int good, int amount) {
@@ -27,6 +34,10 @@ public class GoodsPrices {
 
     public int getPrice(int good) {
         return this.prices[good];
+    }
+
+    public int getPrice(GoodsIndex good) {
+        return this.prices[good.ordinal()];
     }
 
     public void setPrice(int good, int price) {

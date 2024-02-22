@@ -24,6 +24,9 @@ public class Ship {
         this.shipStats.fuel.changeBy(capacity);
     }
 
+    public void destroy() {
+        this.shipStats.health.setCurr(0);
+    }
     public void refuel() {
         this.shipStats.fuel.setToMax();
     }
