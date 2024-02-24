@@ -1,6 +1,7 @@
 package cz.cuni.mff.pijalekj.entities;
 
 import cz.cuni.mff.pijalekj.battle.BattleDecision;
+import cz.cuni.mff.pijalekj.battle.Playerlike;
 import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.BattleActionType;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
@@ -20,12 +21,12 @@ public class Trader extends Entity {
     }
 
     @Override
-    public BattleDecision battle(Entity opponent) {
+    public BattleDecision battle(Playerlike opponent) {
         return new BattleDecision(BattleActionType.flee, this.ownedShip.getFleeChance());
     }
 
     @Override
-    public void won(Entity opponent) {
+    public void won(Playerlike opponent) {
         this.takeAll(opponent.getEntityStats());
         this.entityStats.transferAllCredits(opponent.getEntityStats());
     }
@@ -37,7 +38,6 @@ public class Trader extends Entity {
 
     @Override
     public OptionalInt play() {
-
         if (!this.isAlive()) {
             return OptionalInt.empty();
         }

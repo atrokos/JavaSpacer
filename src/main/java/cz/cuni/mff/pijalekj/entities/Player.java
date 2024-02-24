@@ -1,9 +1,12 @@
 package cz.cuni.mff.pijalekj.entities;
 
+import cz.cuni.mff.pijalekj.battle.Playerlike;
 import cz.cuni.mff.pijalekj.managers.TravelManager;
 import cz.cuni.mff.pijalekj.ships.Ship;
 
-public class Player {
+import java.util.HashSet;
+
+public class Player implements Playerlike {
     public String name;
     private final TravelManager travelManager;
     public Ship ownedShip;
@@ -62,5 +65,17 @@ public class Player {
     public void travel() {
         travelManager.travel();
         ownedShip.burnFuel();
+    }
+    public HashSet<Integer> getPresentEntities() {
+        return travelManager.getPresentEntities();
+    }
+    @Override
+    public Ship getOwnedShip() {
+        return ownedShip;
+    }
+
+    @Override
+    public EntityStats getEntityStats() {
+        return entityStats;
     }
 }

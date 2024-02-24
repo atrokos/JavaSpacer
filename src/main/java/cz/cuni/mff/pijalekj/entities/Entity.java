@@ -1,6 +1,7 @@
 package cz.cuni.mff.pijalekj.entities;
 
 import cz.cuni.mff.pijalekj.battle.BattleDecision;
+import cz.cuni.mff.pijalekj.battle.Playerlike;
 import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
@@ -11,7 +12,7 @@ import cz.cuni.mff.pijalekj.ships.Ship;
 
 import java.util.OptionalInt;
 
-public abstract class Entity {
+public abstract class Entity implements Playerlike {
     protected TravelManager travelManager;
     protected EntityManager entityManager;
     protected CriminalsManager criminalsManager;
@@ -49,8 +50,8 @@ public abstract class Entity {
     }
 
     public abstract OptionalInt play();
-    public abstract BattleDecision battle(Entity opponent);
-    public abstract void won(Entity opponent);
+    public abstract BattleDecision battle(Playerlike opponent);
+    public abstract void won(Playerlike opponent);
     public abstract void lost();
     public void takeDamage(int damage) {
         this.ownedShip.takeDamage(damage);

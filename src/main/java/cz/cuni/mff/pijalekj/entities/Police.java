@@ -1,6 +1,7 @@
 package cz.cuni.mff.pijalekj.entities;
 
 import cz.cuni.mff.pijalekj.battle.BattleDecision;
+import cz.cuni.mff.pijalekj.battle.Playerlike;
 import cz.cuni.mff.pijalekj.enums.BattleActionType;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
 import cz.cuni.mff.pijalekj.managers.CriminalsManager;
@@ -22,13 +23,13 @@ public class Police extends Entity {
     }
 
     @Override
-    public BattleDecision battle(Entity opponent) {
+    public BattleDecision battle(Playerlike opponent) {
         return new BattleDecision(BattleActionType.attack, Ship.damageOutput(this.ownedShip, opponent.getOwnedShip()));
     }
 
     @Override
-    public void won(Entity opponent) {
-        this.takeAll(opponent.entityStats);
+    public void won(Playerlike opponent) {
+        this.takeAll(opponent.getEntityStats());
     }
 
     @Override

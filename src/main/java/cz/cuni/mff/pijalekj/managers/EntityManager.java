@@ -44,9 +44,13 @@ public class EntityManager {
 
     /// This method lets Entities play and collects their targets (if any).
     /// Everyone can have at most 1 attacker.
-    public HashMap<Integer, Integer> play() {
+    public HashMap<Integer, Integer> play(OptionalInt playerAttack) {
         var results = new HashMap<Integer, Integer>();
         var victims = new HashSet<Integer>();
+        if (playerAttack.isPresent()) {
+            results.put(-1, playerAttack.getAsInt());
+            victims.add(playerAttack.getAsInt());
+        }
 
         for (int i = 0; i < this.entities.length; i++) {
             OptionalInt result = this.entities[i].play();

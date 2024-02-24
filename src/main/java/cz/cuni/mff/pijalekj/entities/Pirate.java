@@ -1,6 +1,7 @@
 package cz.cuni.mff.pijalekj.entities;
 
 import cz.cuni.mff.pijalekj.battle.BattleDecision;
+import cz.cuni.mff.pijalekj.battle.Playerlike;
 import cz.cuni.mff.pijalekj.enums.BattleActionType;
 import cz.cuni.mff.pijalekj.enums.EntityActions;
 import cz.cuni.mff.pijalekj.enums.ShipType;
@@ -17,7 +18,7 @@ public class Pirate extends Entity {
         super(travelManager, entityManager, criminalsManager, ownedShip, entityStats, prevAction, entityID);
     }
 
-    public BattleDecision battle(Entity opponent) {
+    public BattleDecision battle(Playerlike opponent) {
         if (this.outSustain(opponent.getOwnedShip()) > 0) {
             return new BattleDecision(BattleActionType.attack,
                     Ship.damageOutput(this.ownedShip, opponent.getOwnedShip()));
@@ -27,7 +28,7 @@ public class Pirate extends Entity {
     }
 
     @Override
-    public void won(Entity opponent) {
+    public void won(Playerlike opponent) {
         this.takeAll(opponent.getEntityStats());
         this.entityStats.transferAllCredits(opponent.getEntityStats());
     }
@@ -74,7 +75,7 @@ public class Pirate extends Entity {
     private OptionalInt findVictim() {
         var presentEnt = this.travelManager.getPresentEntities();
         int maxSustain = 0;
-        int victimID = -1;
+        int victimID = -2;
         this.prevAction = EntityActions.scan;
 
         for (var ID : presentEnt) {
@@ -96,7 +97,7 @@ public class Pirate extends Entity {
             }
         }
 
-        if (victimID != -1) {
+        if (victimID != -2) {
             if (presentEnt.size() > 2) {
                 this.criminalsManager.addCriminal(this.entityID);
             }

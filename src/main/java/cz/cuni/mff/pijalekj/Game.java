@@ -1,6 +1,7 @@
 package cz.cuni.mff.pijalekj;
 
 import cz.cuni.mff.pijalekj.battle.Battle;
+import cz.cuni.mff.pijalekj.battle.Playerlike;
 import cz.cuni.mff.pijalekj.builders.ShipBuilder;
 import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.entities.*;
@@ -16,9 +17,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class Game  {
@@ -27,6 +26,7 @@ public class Game  {
     private final EntityManager entityManager;
     private final GameClock clock = new GameClock();
     private boolean firstTime = true;
+    private boolean searchOpponents = true;
 
     public Game(LocationsManager lm, CriminalsManager cm, EntityManager em) {
         this.locationsManager = lm;
@@ -39,28 +39,28 @@ public class Game  {
             this.entityManager.resetNPCs(this.criminalsManager, this.locationsManager);
             this.locationsManager.updateAllPlanets();
         }
-        // TODO remove comments HERE
-//        if (firstTime) {
-//            this.setPlayerName();
-//            firstTime = false;
-//        }
-//        this.playerPlay();
-        HashMap<Integer, Integer> fightRequests = this.entityManager.play();
+
+        if (firstTime) {
+            this.setPlayerName();
+            firstTime = false;
+        }
+        var result = this.playerPlay();
+        HashMap<Integer, Integer> fightRequests = this.entityManager.play(result);
         this.handleBattles(fightRequests);
         this.criminalsManager.updateCriminals();
 
         return this.entityManager.getPlayer().isAlive();
     }
 
-    private void handleBattles(HashMap<Integer, Integer> fightRequests) {
+    private void handleBattles(HashMap<Integer, Integer> fightRequests) throws IOException {
         // Player's request always has the highest priority
-        int playerOpponent = fightRequests.getOrDefault(0, -1);
-        if (playerOpponent > 0) {
+        int playerOpponent = fightRequests.getOrDefault(-1, -2);
+        if (playerOpponent >= 0) {
             this.playerBattle(playerOpponent, true);
-            fightRequests.remove(0);
+            fightRequests.remove(-1);
         }
         for (var entry : fightRequests.entrySet()) {
-            if (entry.getValue() == 0) {
+            if (entry.getValue() == -1) {
                 this.playerBattle(entry.getKey(), false);
                 continue;
             }
@@ -73,16 +73,58 @@ public class Game  {
         }
     }
 
-    private void playerBattle(int opponentID, boolean startedByPlayer) {
+    private void playerBattle(int opponentID, boolean startedByPlayer) throws IOException {
+        Entity opponent = entityManager.getEntity(opponentID);
+        Ship playersShip = entityManager.getEntityShip(-1);
+        Random generator = new Random();
+        int playersDamage = Ship.damageOutput(playersShip, opponent.getOwnedShip());
+        this.output.clearScreen();
+        if (!startedByPlayer) {
+            this.output.show("You are under attack!\n");
+        }
+        while (playersShip.isAlive() && opponent.isAlive()) {
+            this.output.showBattleInfo(opponent);
+            this.output.showSimpleOptions("Attack", "Flee");
+            int input = Input.askNumber(0, 1);
+            if (input == 0) {
+                opponent.takeDamage(playersDamage);
+            } else {
+                double dieThrow = generator.nextInt(0, 101);
+                if (dieThrow <= playersShip.getFleeChance()) {
+                    return; // One party fled
+                }
+            }
+
+            var attackerAction = opponent.battle(entityManager.getPlayer());
+            switch (attackerAction.actionType()) {
+                case attack -> {
+                    playersShip.takeDamage(attackerAction.value());
+                }
+                case flee -> {
+                    double dieThrow = generator.nextInt(0, 101);
+                    if (dieThrow <= attackerAction.value()) {
+                        return; // One party fled
+                    }
+                }
+            }
+            this.output.clearScreen();
+        }
+        if (!playersShip.isAlive())
+            this.output.show("You died!");
         // TODO This + ask player if they want to fight someone present when traveling
     }
 
-    private void playerPlay() throws Exception {
+    private OptionalInt playerPlay() throws Exception {
         Player player = entityManager.getPlayer();
         if (player.isTraveling()) {
+            if (searchOpponents) {
+                searchOpponents = false;
+                return searchForOpponents();
+            }
             player.travel();
         }
         while (!player.isTraveling()) {
+            searchOpponents = true;
             try {
                 this.output.showMainScreen();
                 Input.askOptions(
@@ -95,6 +137,29 @@ public class Game  {
                 break;
             }
         }
+        return OptionalInt.empty();
+    }
+    private OptionalInt searchForOpponents() throws IOException {
+        Player player = entityManager.getPlayer();
+        var presentEntities = player.getPresentEntities();
+        var possibleVictimID = presentEntities.stream().filter(ID -> ID != -1).findFirst();
+        if (possibleVictimID.isEmpty()) {
+            return OptionalInt.empty();
+        }
+        this.output.clearScreen();
+        Ship opponentShip = entityManager.getEntityShip(possibleVictimID.get());
+        this.output.show("While traveling, you meet a ship:\n");
+        this.output.showShipBattle(opponentShip, player.getOwnedShip());
+
+        this.output.show("\nWhat would you like to do?\n");
+        this.output.showSimpleOptions("Ignore it", "Attack it");
+        int input = Input.askNumber(0, 1);
+
+        if (input == 0) {
+            return OptionalInt.empty();
+        }
+
+        return OptionalInt.of(possibleVictimID.get());
     }
 
     private void scanNeighbors(Planet planet) throws IOException {
@@ -308,7 +373,18 @@ public class Game  {
         private void clearScreen() {
             console.print("\033c");
         }
-
+        private void showBattleInfo(Playerlike opponent) {
+            this.show("===== Battle info =====\n");
+            this.show("Your stats\n");
+            this.showShipBattle(entityManager.getEntityShip(-1), opponent.getOwnedShip());
+            this.show("\nOpponent's stats\n");
+            this.showShipBattle(opponent.getOwnedShip(), entityManager.getEntityShip(-1));
+        }
+        private void showShipBattle(Ship displayedShip, Ship ship2) {
+            this.show("Hull:    %s\n", displayedShip.getStats().hull.toString());
+            this.show("Shields: %s\n", displayedShip.getStats().shields.toString());
+            this.show("Damage:  %d\n\n", Ship.damageOutput(displayedShip, ship2));
+        }
         private void goodsAnalysis(Planet otherPlanet) {
             var currPlanetGoods = entityManager.getPlayer().getCurrPlanet().getGoodsPrices();
             var otherPlanetGoods = otherPlanet.getGoodsPrices();
@@ -343,7 +419,7 @@ public class Game  {
                         locationsManager.getPlanetName(neighbor),
                         locationsManager.getDistanceBetween(planetID, neighbor)));
             }
-            this.showSimpleOptions(options);
+            this.showSimpleOptions(options.toArray(new String[0]));
             this.show("\n" + msg);
         }
         private void showShipDealership() {
@@ -371,9 +447,9 @@ public class Game  {
             this.show("Cargo:   %d/%d\n\n", player.getCurrCargo(), player.getMaxCargo());
         }
 
-        private void showSimpleOptions(List<String> options) {
-            for (int i = 0; i < options.size(); ++i) {
-                this.show("%d) %s\n", i, options.get(i));
+        private void showSimpleOptions(String... options) {
+            for (int i = 0; i < options.length; ++i) {
+                this.show("%d) %s\n", i, options[i]);
             }
         }
 
