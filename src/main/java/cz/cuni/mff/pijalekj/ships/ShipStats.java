@@ -1,7 +1,7 @@
 package cz.cuni.mff.pijalekj.ships;
 
 public class ShipStats {
-    public MaxValue hull;
+    public final MaxValue hull;
 
     /**
      *  Cargo capacity of the ship.
@@ -11,22 +11,22 @@ public class ShipStats {
     /**
      *  Fuel of the ship.
      */
-    public MaxValue fuel;
+    public final MaxValue fuel;
 
     /**
      *  Ship's shields.
      */
-    public MaxValue shields;
+    public final MaxValue shields;
 
     /**
      *  Damage done by the ship.
      */
-    public int damage;
+    public final int damage;
 
     /**
      *  Maneuver of the ship.
      */
-    public int maneuver;
+    public final int maneuver;
 
     /**
      *  Ship's chance to flee from combat.
@@ -36,7 +36,7 @@ public class ShipStats {
     public ShipStats(MaxValue hull, int cargo, MaxValue fuel,
                      MaxValue shields, int damage, int maneuver) {
         this.hull = hull;
-        this.maxCargo = cargo;
+        maxCargo = cargo;
         this.fuel = fuel;
         this.shields = shields;
         this.damage = damage;

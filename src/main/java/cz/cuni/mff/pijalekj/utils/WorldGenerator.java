@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+/**
+ * The WorldGenerator class provides methods for generating a world, including planets, locations, and entities.
+ * It utilizes randomization and data from a configuration file to create a dynamic and varied game environment.
+ */
 public class WorldGenerator {
     private final static Random generator = new Random();
     private final static int minDistance;
@@ -32,12 +36,24 @@ public class WorldGenerator {
         maxNeighbourCount = defaultWorldData.getLong("NeighbourCount.Max").intValue();
     }
 
+    /**
+     * Generates an array of random planets with specified size.
+     *
+     * @param size The number of planets to generate.
+     * @return An array of Planet objects representing the generated planets.
+     */
     private static Planet[] generatePlanets(int size) {
         return IntStream.range(0, size)
                 .mapToObj(PlanetBuilder::randomPlanet)
                 .toArray(Planet[]::new);
     }
 
+    /**
+     * Generates a LocationsManager with random planets, connections, and entities based on the specified size.
+     *
+     * @param size The number of planets in the generated world.
+     * @return A LocationsManager containing the generated world information.
+     */
     public static LocationsManager generateLocations(int size) {
         Planet[] planets = generatePlanets(size);
         int[][] adjacencyMatrix = new int[size][size];
@@ -52,7 +68,7 @@ public class WorldGenerator {
             neighborList.add(new HashSet<>());
 
             if (ID != 0) {
-                connectPlanets(adjacencyMatrix, neighborList, ID, ID-1);
+                connectPlanets(adjacencyMatrix, neighborList, ID, ID - 1);
             }
         }
 
@@ -83,6 +99,14 @@ public class WorldGenerator {
         return new LocationsManager(adjacencyMatrix, presentEntities, neighborListArray, planets);
     }
 
+    /**
+     * Connects two planets in the world by updating the adjacency matrix and neighbor lists.
+     *
+     * @param adjMatrix The adjacency matrix representing connections between planets.
+     * @param neighbors The list of neighbor sets for each planet.
+     * @param planet1ID The ID of the first planet to connect.
+     * @param planet2ID The ID of the second planet to connect.
+     */
     private static void connectPlanets(int[][] adjMatrix, List<HashSet<Integer>> neighbors,
                                        int planet1ID, int planet2ID)
     {
@@ -93,6 +117,13 @@ public class WorldGenerator {
         neighbors.get(planet1ID).add(planet2ID);
     }
 
+    /**
+     * Generates entities, including police, traders, and pirates, and sets them in the EntityManager.
+     *
+     * @param lm The LocationsManager containing the world information.
+     * @param em The EntityManager to populate with generated entities.
+     * @param cm The CriminalsManager to associate with generated entities.
+     */
     public static void generateEntities(LocationsManager lm, EntityManager em, CriminalsManager cm) {
         int noOfPlanets = lm.getAllPlanets().length;
         ArrayList<Entity> entities = new ArrayList<>();
@@ -110,9 +141,16 @@ public class WorldGenerator {
         em.setPlayer(eb.newPlayer(-1, noOfPlanets / 2, "NOTSET"));
     }
 
+    /**
+     * Populates the world by adding entities to their respective locations in the LocationsManager.
+     *
+     * @param lm The LocationsManager containing the world information.
+     * @param em The EntityManager containing the entities to be added to the world.
+     */
     public static void populateWorld(LocationsManager lm, EntityManager em) {
         for (var entity : em.getEntities()) {
             lm.addEntityTo(entity.getID(), entity.getCurrPosition());
         }
     }
 }
+

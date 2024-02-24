@@ -6,10 +6,8 @@ import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.LocationsManager;
 import cz.cuni.mff.pijalekj.utils.WorldGenerator;
 
-import java.io.IOException;
-
 public class Main {
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) {
         EntityManager em = new EntityManager();
         LocationsManager lm = WorldGenerator.generateLocations(500);
         CriminalsManager cm = new CriminalsManager();

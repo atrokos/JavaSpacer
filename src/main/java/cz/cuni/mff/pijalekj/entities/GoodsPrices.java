@@ -12,36 +12,36 @@ public class GoodsPrices {
     }
 
     public int getGoodAmount(int good) {
-        assert this.goods[good] >= 0: "Good " + good + " is < 0!";
-        return this.goods[good];
+        assert goods[good] >= 0: "Good " + good + " is < 0!";
+        return goods[good];
     }
 
     public int getGoodAmount(GoodsIndex good) {
-        assert this.goods[good.ordinal()] >= 0: "Good " + good + " is < 0!";
-        return this.goods[good.ordinal()];
+        assert goods[good.ordinal()] >= 0: "Good " + good + " is < 0!";
+        return goods[good.ordinal()];
     }
 
     public void addGood(int good, int amount) {
         assert amount >= 0: "Good " + good + " amount cannot be negative!";
-        this.goods[good] += amount;
+        goods[good] += amount;
     }
 
     public void removeGood(int good, int amount) {
         assert amount >= 0: "Good " + good + " amount cannot be negative!";
-        assert this.goods[good] >= amount: "Amount has to be larger than goods[good]!";
-        this.goods[good] -= amount;
+        assert goods[good] >= amount: "Amount has to be larger than goods[good]!";
+        goods[good] -= amount;
     }
 
     public int getPrice(int good) {
-        return this.prices[good];
+        return prices[good];
     }
 
     public int getPrice(GoodsIndex good) {
-        return this.prices[good.ordinal()];
+        return prices[good.ordinal()];
     }
 
     public void setPrice(int good, int price) {
         assert price >= 0;
-        this.prices[good] = price;
+        prices[good] = price;
     }
 }

@@ -6,8 +6,6 @@ import cz.cuni.mff.pijalekj.managers.EntityManager;
 import cz.cuni.mff.pijalekj.managers.LocationsManager;
 import cz.cuni.mff.pijalekj.utils.WorldGenerator;
 
-import java.io.IOException;
-
 public class MainNPCsOnly {
     public static void main(String[] args) throws Exception {
         EntityManager em = new EntityManager();

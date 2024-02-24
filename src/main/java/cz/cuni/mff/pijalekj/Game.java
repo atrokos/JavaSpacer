@@ -20,71 +20,124 @@ import java.io.PrintStream;
 import java.util.*;
 import java.util.function.Predicate;
 
+/**
+ * Represents the actual game. It is self-contained; there are no other dependencies other than
+ * that all member variables have to be initialized.
+ */
 public class Game  {
     private final LocationsManager locationsManager;
     private final CriminalsManager criminalsManager;
     private final EntityManager entityManager;
     private final GameClock clock = new GameClock();
+    /** Whether the game cycle runs for the first time. */
     private boolean firstTime = true;
+    /** Whether it should offer attacking ships when traveling. */
     private boolean searchOpponents = true;
 
+    /**
+     * Constructs the game. Note that the player's name has to be set after this, using the setPlayerName() method.
+     * @param lm The LocationsManager the game is associated with.
+     * @param cm The CriminalsManager the game is associated with.
+     * @param em The EntityManager the game is associated with.
+     */
     public Game(LocationsManager lm, CriminalsManager cm, EntityManager em) {
-        this.locationsManager = lm;
-        this.criminalsManager = cm;
-        this.entityManager = em;
+        locationsManager = lm;
+        criminalsManager = cm;
+        entityManager = em;
     }
 
+    /**
+     * Main gameplay loop.
+     * @return Whether to run another game cycle.
+     * @throws Exception Any exception that is handled outside.
+     */
     public boolean play() throws Exception {
-        if (this.clock.tick()) {
-            this.entityManager.resetNPCs(this.criminalsManager, this.locationsManager);
-            this.locationsManager.updateAllPlanets();
-        }
+        handleGameTick();
 
         if (firstTime) {
-            this.setPlayerName();
+            setPlayerName();
             firstTime = false;
         }
-        var result = this.playerPlay();
-        HashMap<Integer, Integer> fightRequests = this.entityManager.play(result);
-        this.handleBattles(fightRequests);
-        this.criminalsManager.updateCriminals();
 
-        return this.entityManager.getPlayer().isAlive();
+        OptionalInt playerActionResult = playerPlay();
+        HashMap<Integer, Integer> fightRequests = entityManager.play(playerActionResult);
+        handleBattles(fightRequests);
+        criminalsManager.updateCriminals();
+
+        return entityManager.getPlayer().isAlive();
     }
 
+    /**
+     * Updates all planets and resets all NPCs during the Big tick.
+     */
+    private void handleGameTick() {
+        if (clock.tick()) {
+            entityManager.resetNPCs(criminalsManager, locationsManager);
+            locationsManager.updateAllPlanets();
+        }
+    }
+
+    /**
+     * Handles all requested battles in the fightRequests map.
+     * @param fightRequests All fight requests in the form Attacker -> Attacked.
+     */
     private void handleBattles(HashMap<Integer, Integer> fightRequests) throws IOException {
-        // Player's request always has the highest priority
+        handlePlayerBattle(fightRequests);
+        handleOtherBattles(fightRequests);
+    }
+
+    /**
+     * Manage Player's battle, if any.
+     */
+    private void handlePlayerBattle(HashMap<Integer, Integer> fightRequests) throws IOException {
         int playerOpponent = fightRequests.getOrDefault(-1, -2);
         if (playerOpponent >= 0) {
-            this.playerBattle(playerOpponent, true);
+            criminalsManager.addCriminal(-1);
+            playerBattle(playerOpponent, true);
             fightRequests.remove(-1);
-        }
-        for (var entry : fightRequests.entrySet()) {
-            if (entry.getValue() == -1) {
-                this.playerBattle(entry.getKey(), false);
-                continue;
-            }
-            if (!(entityManager.getEntity(entry.getKey()) instanceof Police)) {
-                criminalsManager.addCriminal(entry.getKey());
-            }
-            Battle battle = new Battle(this.entityManager.getEntity(entry.getKey()),
-                    this.entityManager.getEntity(entry.getValue()));
-            battle.fight();
         }
     }
 
+    /** Handle battles of all NPCs */
+    private void handleOtherBattles(HashMap<Integer, Integer> fightRequests) throws IOException {
+        for (var entry : fightRequests.entrySet()) {
+            if (entry.getValue() == -1) {
+                playerBattle(entry.getKey(), false);
+                continue;
+            }
+            Entity attacker = entityManager.getEntity(entry.getKey());
+            Entity attacked = entityManager.getEntity(entry.getValue());
+            if (!(attacker instanceof Police)) {
+                criminalsManager.addCriminal(entry.getKey());
+            }
+            if (attacker.isAlive() && attacked.isAlive()){
+                Battle battle = new Battle(attacker, attacked);
+                battle.fight();
+            } else {
+                criminalsManager.removeCriminal(entry.getKey());
+                criminalsManager.removeCriminal(entry.getValue());
+            }
+        }
+    }
+
+    /**
+     * Manages all logic and dialogues of the player.
+     * @param opponentID The internal EntityID of the opponent.
+     * @param startedByPlayer Whether the attack was started by the player or the opponent.
+     * @throws IOException When reading the input.
+     */
     private void playerBattle(int opponentID, boolean startedByPlayer) throws IOException {
         Entity opponent = entityManager.getEntity(opponentID);
         Ship playersShip = entityManager.getEntityShip(-1);
         Random generator = new Random();
         int playersDamage = Ship.damageOutput(playersShip, opponent.getOwnedShip());
-        this.output.clearScreen();
+        output.clearScreen();
         if (!startedByPlayer) {
-            this.output.show("You are under attack!\n");
+            output.show("You are under attack!\n");
         }
         while (playersShip.isAlive() && opponent.isAlive()) {
-            this.output.showBattleInfo(opponent);
-            this.output.showSimpleOptions("Attack", "Flee");
+            output.showBattleInfo(opponent);
+            output.showSimpleOptions("Attack", "Flee");
             int input = Input.askNumber(0, 1);
             if (input == 0) {
                 opponent.takeDamage(playersDamage);
@@ -97,9 +150,7 @@ public class Game  {
 
             var attackerAction = opponent.battle(entityManager.getPlayer());
             switch (attackerAction.actionType()) {
-                case attack -> {
-                    playersShip.takeDamage(attackerAction.value());
-                }
+                case attack -> playersShip.takeDamage(attackerAction.value());
                 case flee -> {
                     double dieThrow = generator.nextInt(0, 101);
                     if (dieThrow <= attackerAction.value()) {
@@ -107,13 +158,13 @@ public class Game  {
                     }
                 }
             }
-            this.output.clearScreen();
+            output.clearScreen();
         }
         if (!playersShip.isAlive())
-            this.output.show("You died!");
-        // TODO This + ask player if they want to fight someone present when traveling
+            output.show("You died!");
     }
 
+    /** Manages the logic when it's the player's turn. */
     private OptionalInt playerPlay() throws Exception {
         Player player = entityManager.getPlayer();
         if (player.isTraveling()) {
@@ -123,22 +174,28 @@ public class Game  {
             }
             player.travel();
         }
-        while (!player.isTraveling()) {
+
+        while (!player.isTraveling() && player.isAlive()) {
+            player.ownedShip.rechargeShields();
             searchOpponents = true;
-            try {
-                this.output.showMainScreen();
-                Input.askOptions(
-                        new Input.Option("Quit game", this::quitGame),
-                        new Input.Option("Buy/sell goods", this::buySellGoods),
-                        new Input.Option("Manage ship", this::manageShip),
-                        new Input.Option("Seek markets", this::seekMarkets),
-                        new Input.Option("Travel to another planet", this::travelToPlanet));
-            } catch (Exception e) {
-                break;
-            }
+            output.showMainScreen();
+            handlePlayerOptions();
         }
+
         return OptionalInt.empty();
     }
+    /** Handle all player's options when in the main menu. */
+    private void handlePlayerOptions() throws Exception {
+        Input.askOptions(
+                new Input.Option("Quit game", this::quitGame),
+                new Input.Option("Buy/sell goods", this::buySellGoods),
+                new Input.Option("Manage ship", this::manageShip),
+                new Input.Option("Seek markets", this::seekMarkets),
+                new Input.Option("Travel to another planet", this::travelToPlanet)
+        );
+    }
+    /** Searches for possible opponents that are on the same path as the player. Asks the player if they want to
+     * attack the found NPC. */
     private OptionalInt searchForOpponents() throws IOException {
         Player player = entityManager.getPlayer();
         var presentEntities = player.getPresentEntities();
@@ -146,13 +203,13 @@ public class Game  {
         if (possibleVictimID.isEmpty()) {
             return OptionalInt.empty();
         }
-        this.output.clearScreen();
+        output.clearScreen();
         Ship opponentShip = entityManager.getEntityShip(possibleVictimID.get());
-        this.output.show("While traveling, you meet a ship:\n");
-        this.output.showShipBattle(opponentShip, player.getOwnedShip());
+        output.show("While traveling, you meet a ship:\n");
+        output.showShipBattle(opponentShip, player.getOwnedShip());
 
-        this.output.show("\nWhat would you like to do?\n");
-        this.output.showSimpleOptions("Ignore it", "Attack it");
+        output.show("\nWhat would you like to do?\n");
+        output.showSimpleOptions("Ignore it", "Attack it");
         int input = Input.askNumber(0, 1);
 
         if (input == 0) {
@@ -161,15 +218,15 @@ public class Game  {
 
         return OptionalInt.of(possibleVictimID.get());
     }
-
+    /** Shows details about the given Planet. */
     private void scanNeighbors(Planet planet) throws IOException {
-        var neighbors = locationsManager.getNeighborsOf(planet.getPlanetID());
+        var neighbors = locationsManager.getNeighborsOf(planet.planetID());
 
         while (true) {
-            this.output.clearScreen();
-            this.output.show("Currently scanned planet: %s\n", planet.getName());
-            this.output.goodsAnalysis(planet);
-            this.output.showPlanetNeighbors(planet.getPlanetID(), "Where to seek next?\n");
+            output.clearScreen();
+            output.show("Currently scanned planet: %s\n", planet.name());
+            output.goodsAnalysis(planet);
+            output.showPlanetNeighbors(planet.planetID(), "Where to seek next?\n");
             int input = Input.askNumber(0, neighbors.length);
             if (input == 0) {
                 return;
@@ -177,41 +234,42 @@ public class Game  {
             scanNeighbors(locationsManager.getPlanet(neighbors[input-1]));
         }
     }
-
+    /** Asks user for the player's name and sets it. */
     private void setPlayerName() throws IOException {
-        this.output.clearScreen();
-        this.output.askPlayerName();
-        String name = Input.askString(String::isBlank, this.output.console);
+        output.clearScreen();
+        output.askPlayerName();
+        String name = Input.askString(String::isBlank, output.console);
         if (name == null) {
             throw new IOException("Player name is null; terminating.");
         }
-        this.entityManager.setPlayerName(name);
+        entityManager.setPlayerName(name);
     }
+    /** Manages logic and dialogues for the BuySell screen. */
     private void buySellGoods() throws IOException {
-        Player player = this.entityManager.getPlayer();
-        var currPlanetGoods = this.entityManager.getPlayer().getCurrPlanet().getGoodsPrices();
+        Player player = entityManager.getPlayer();
+        var currPlanetGoods = entityManager.getPlayer().getCurrPlanet().goodsPrices();
         var playerGoods = player.entityStats;
 
         while (true) {
             int freeSpace = player.getMaxCargo() - player.getCurrCargo();
-            this.output.showBuySellScreen();
+            output.showBuySellScreen();
             var choice = Input.askNumber(0, GoodsIndex.values().length);
             if (choice == 0) {
                 return;
             }
             choice -= 1; // Chosen number is always +1 higher than the actual index in the array (0 is for going back)
-            this.output.show("How many %s would you like to buy or sell?\n",
+            output.show("How many %s would you like to buy or sell?\n",
                     GoodsIndex.values()[choice].toString());
             while (true) {
                 var amount = Input.askNumber(-playerGoods.getGoodAmount(choice), currPlanetGoods.getGoodAmount(choice));
                 int price = currPlanetGoods.getPrice(choice) * amount;
                 if (amount > 0) { // Buying
                     if (price > playerGoods.getCredits()) {
-                        this.output.show("\nYou don't have enough credits!\n");
+                        output.show("\nYou don't have enough credits!\n");
                         continue;
                     }
                     if (amount > freeSpace) {
-                        this.output.show("\nYou don't have enough space on the ship!\n");
+                        output.show("\nYou don't have enough space on the ship!\n");
                         continue;
                     }
                     playerGoods.addGood(choice, amount);
@@ -229,15 +287,15 @@ public class Game  {
             }
         }
     }
-    private void quitGame() throws Exception {
-        this.entityManager.getPlayer().kill();
-        throw new Exception();
+    /** Kills the player, effectively ending the game. */
+    private void quitGame() {
+        entityManager.getPlayer().kill();
     }
+    /** Gives the player all options that manage their ship. */
     private void manageShip() {
-        Player player = this.entityManager.getPlayer();
         while (true) {
             try {
-                this.output.showShipInfo();
+                output.showShipInfo();
 
                 Input.askOptions(
                         new Input.Option("Go back", this::goBack),
@@ -250,71 +308,72 @@ public class Game  {
             }
         }
     }
+    /** Shows the dialogue for repairing the player's ship. */
     public void repairHull() throws IOException {
-        Player player = this.entityManager.getPlayer();
+        Player player = entityManager.getPlayer();
         int hullDiff = player.getMaxHull() - player.getCurrHull();
         int hullCost = hullDiff * Constants.repairCost;
         int newHullValue = player.getMaxHull();
 
-        this.output.clearScreen();
+        output.clearScreen();
         if (hullCost > player.getCredits()) {
             int maxHullPossible = (player.getCredits() / Constants.repairCost);
             int newCost = maxHullPossible * Constants.repairCost;
             newHullValue = player.getCurrHull() + maxHullPossible;
 
-            this.output.show("Fully repairing the hull would cost %d, which you can't afford.\n", hullCost);
-            this.output.show("You can repair your ship to %d, which would cost %d. You have %d credits.\n",
+            output.show("Fully repairing the hull would cost %d, which you can't afford.\n", hullCost);
+            output.show("You can repair your ship to %d, which would cost %d. You have %d credits.\n",
                     newHullValue, newCost, player.getCredits());
 
             hullCost = newCost;
         } else {
-            this.output.show("Repairing the ship to full costs %d credits (you have %d).\n",
+            output.show("Repairing the ship to full costs %d credits (you have %d).\n",
                     hullCost, player.getCredits());
         }
 
-        this.output.show("0) Cancel repairs\n1) Repair hull\n\n");
+        output.show("0) Cancel repairs\n1) Repair hull\n\n");
         int input = Input.askNumber(0, 1);
         if (input != 0) {
             player.ownedShip.repairHull(newHullValue);
             player.entityStats.removeCredits(hullCost);
         }
     }
+    /** Shows the dialogue for repairing the player's ship. */
     public void refuelShip() throws IOException {
-        Player player = this.entityManager.getPlayer();
+        Player player = entityManager.getPlayer();
         int fuelDiff = player.getMaxFuel() - player.getCurrFuel();
         int fuelCost = fuelDiff * Constants.fuelCost;
         int newFuelValue = player.getMaxFuel();
 
-        this.output.clearScreen();
+        output.clearScreen();
         if (fuelCost > player.getCredits()) {
             int maxFuelPossible = (player.getCredits() / Constants.fuelCost);
             int newCost = maxFuelPossible * Constants.fuelCost;
             newFuelValue = player.getCurrFuel() + maxFuelPossible;
-            this.output.show("Fully refueling your ship would cost %d, which you can't afford.\n", fuelCost);
-            this.output.show("You can refuel your ship to %d, which would cost %d. You have %d credits.\n",
+            output.show("Fully refueling your ship would cost %d, which you can't afford.\n", fuelCost);
+            output.show("You can refuel your ship to %d, which would cost %d. You have %d credits.\n",
                     newFuelValue, newCost, player.getCredits());
-            this.output.show("0) Cancel repairs\n1) Repair hull");
+            output.show("0) Cancel repairs\n1) Repair hull");
 
             fuelCost = newCost;
         } else {
-            this.output.show("Fully refueling your ship costs %d credits (you have %d).\n",
+            output.show("Fully refueling your ship costs %d credits (you have %d).\n",
                     fuelCost, player.getCredits());
         }
 
-        this.output.show("0) Go back\n1) Refuel ship\n\n");
+        output.show("0) Go back\n1) Refuel ship\n\n");
         int input = Input.askNumber(0, 1);
         if (input != 0) {
-            player.ownedShip.repairHull(newFuelValue);
+            player.ownedShip.refuel(newFuelValue);
             player.entityStats.removeCredits(fuelCost);
         }
     }
-
+    /** Manages the dialogue for buying a new ship. */
     public void buyNewShip() throws IOException {
         Player player = entityManager.getPlayer();
-        this.output.showShipDealership();
+        output.showShipDealership();
         if (player.getCurrCargo() > 0) {
-            this.output.show("\nYou have some goods in your cargo. Sell them so that you can buy the new ship!\n");
-//            this.output.showShipDealership();
+            output.show("\nYou have some goods in your cargo. Sell them so that you can buy the new ship!\n");
             int choice = Input.askNumber(0, 0);
             if (choice == 0) {
                 return;
@@ -331,7 +390,7 @@ public class Game  {
                     ("Ships.Prices." + player.ownedShip.getShipType()).intValue();
             int shipPrice = Constants.builders.getLong("Ships.Prices." + chosenShip).intValue();
             if (shipPrice > player.getCredits()) {
-                this.output.show("\nSorry, you cannot afford this ship!\n");
+                output.show("\nSorry, you cannot afford this ship!\n");
             } else {
                 player.ownedShip = ShipBuilder.buildShip(chosenShip);
                 player.entityStats.removeCredits(shipPrice);
@@ -340,19 +399,21 @@ public class Game  {
             }
         }
     }
-
-    public void goBack() throws Exception {
-        throw new Exception();
+    /** Throws an exception, used for fallback to a try-catch block.  */
+    public void goBack() throws IOException {
+        throw new IOException();
     }
+    /** Start case for the recursive scanNeighbors. */
     private void seekMarkets() throws IOException {
         scanNeighbors(entityManager.getPlayer().getCurrPlanet());
     }
-    private void travelToPlanet() throws Exception {
+    /** Manages the dialogue for traveling to another planet. */
+    private void travelToPlanet() throws IOException {
         Player player = entityManager.getPlayer();
-        int currPlanetID = player.getCurrPlanet().getPlanetID();
+        int currPlanetID = player.getCurrPlanet().planetID();
         var neighbors = locationsManager.getNeighborsOf(currPlanetID);
 
-        this.output.showTravelOptions(currPlanetID);
+        output.showTravelOptions(currPlanetID);
         while (true) {
             int choice = Input.askNumber(0, neighbors.length);
             if (choice == 0) {
@@ -360,42 +421,65 @@ public class Game  {
             }
             choice -= 1; // Chosen number is always +1 higher than the actual index in the array (0 is for going back)
             if (locationsManager.getDistanceBetween(currPlanetID, neighbors[choice]) > player.getCurrFuel()) {
-                this.output.show("You don't have enough fuel for this trip!\n");
+                output.show("You don't have enough fuel for this trip!\n");
             } else {
-                Game.this.entityManager.getPlayer().travelTo(neighbors[choice]);
-                throw new Exception();
+                entityManager.getPlayer().travelTo(neighbors[choice]);
+                return;
             }
         }
     }
     private final Output output = new Output();
     private class Output {
         private final PrintStream console = System.out;
+
+        /**
+         * Resets the terminal, clearing it.
+         */
         private void clearScreen() {
             console.print("\033c");
         }
-        private void showBattleInfo(Playerlike opponent) {
-            this.show("===== Battle info =====\n");
-            this.show("Your stats\n");
-            this.showShipBattle(entityManager.getEntityShip(-1), opponent.getOwnedShip());
-            this.show("\nOpponent's stats\n");
-            this.showShipBattle(opponent.getOwnedShip(), entityManager.getEntityShip(-1));
-        }
-        private void showShipBattle(Ship displayedShip, Ship ship2) {
-            this.show("Hull:    %s\n", displayedShip.getStats().hull.toString());
-            this.show("Shields: %s\n", displayedShip.getStats().shields.toString());
-            this.show("Damage:  %d\n\n", Ship.damageOutput(displayedShip, ship2));
-        }
-        private void goodsAnalysis(Planet otherPlanet) {
-            var currPlanetGoods = entityManager.getPlayer().getCurrPlanet().getGoodsPrices();
-            var otherPlanetGoods = otherPlanet.getGoodsPrices();
 
-            this.show("Name         Amount Price\n");
-            for (var index : GoodsIndex.values()){
+        /**
+         * Displays battle information between the player and an opponent.
+         *
+         * @param opponent The opponent to display battle information about.
+         */
+        private void showBattleInfo(Playerlike opponent) {
+            show("===== Battle info =====\n");
+            show("Your stats\n");
+            showShipBattle(entityManager.getEntityShip(-1), opponent.getOwnedShip());
+            show("\nOpponent's stats\n");
+            showShipBattle(opponent.getOwnedShip(), entityManager.getEntityShip(-1));
+        }
+
+        /**
+         * Displays the battle statistics of a ship.
+         *
+         * @param displayedShip The ship whose stats are to be displayed.
+         * @param ship2         The second ship for comparison.
+         */
+        private void showShipBattle(Ship displayedShip, Ship ship2) {
+            show("Hull:    %s\n", displayedShip.getStats().hull.toString());
+            show("Shields: %s\n", displayedShip.getStats().shields.toString());
+            show("Damage:  %d\n\n", Ship.damageOutput(displayedShip, ship2));
+        }
+
+        /**
+         * Displays the analysis of goods prices between the current planet and another planet.
+         *
+         * @param otherPlanet The planet to compare goods prices with.
+         */
+        private void goodsAnalysis(Planet otherPlanet) {
+            var currPlanetGoods = entityManager.getPlayer().getCurrPlanet().goodsPrices();
+            var otherPlanetGoods = otherPlanet.goodsPrices();
+
+            show("Name         Amount Price\n");
+            for (var index : GoodsIndex.values()) {
                 int priceOther = otherPlanetGoods.getPrice(index);
                 int priceDiff = priceOther - currPlanetGoods.getPrice(index);
                 int goodAmount = otherPlanetGoods.getGoodAmount(index);
 
-                this.show("%s%s%d%s%d (%d)\n",
+                show("%s%s%d%s%d (%d)\n",
                         index,
                         " ".repeat(13 - index.toString().length()),
                         goodAmount,
@@ -404,12 +488,24 @@ public class Game  {
                         priceDiff);
             }
         }
+
+        /**
+         * Displays the available travel options from the current planet.
+         *
+         * @param currPlanetID The ID of the current planet.
+         */
         private void showTravelOptions(int currPlanetID) {
-            this.clearScreen();
-            this.show("Fuel: %d\n", entityManager.getPlayer().getCurrFuel());
-            this.showPlanetNeighbors(currPlanetID, "Where would you like to travel?\n");
+            clearScreen();
+            show("Fuel: %d\n", entityManager.getPlayer().getCurrFuel());
+            showPlanetNeighbors(currPlanetID, "Where would you like to travel?\n");
         }
 
+        /**
+         * Displays the neighbors of a planet along with travel options.
+         *
+         * @param planetID The ID of the current planet.
+         * @param msg      The message to display.
+         */
         private void showPlanetNeighbors(int planetID, String msg) {
             var neighbors = locationsManager.getNeighborsOf(planetID);
             List<String> options = new ArrayList<>();
@@ -419,49 +515,65 @@ public class Game  {
                         locationsManager.getPlanetName(neighbor),
                         locationsManager.getDistanceBetween(planetID, neighbor)));
             }
-            this.showSimpleOptions(options.toArray(new String[0]));
-            this.show("\n" + msg);
+            showSimpleOptions(options.toArray(new String[0]));
+            show("\n" + msg);
         }
+
+        /**
+         * Displays the available ships for purchase in a dealership.
+         */
         private void showShipDealership() {
-            this.clearScreen();
-            this.show("Welcome to our shop! We have these ships ready for you to buy:\n");
-            this.show("# Ship       Price\n");
+            clearScreen();
+            show("Welcome to our shop! We have these ships ready for you to buy:\n");
+            show("# Ship       Price\n");
             for (var shipType : ShipType.values()) {
-                this.show("%d) %s%s%d\n",
+                show("%d) %s%s%d\n",
                         shipType.ordinal() + 1,
                         shipType,
                         " ".repeat(10 - shipType.toString().length()),
                         Constants.builders.getLong("Ships.Prices." + shipType));
             }
-            this.show("Credits: %d\n\n0) Go back\n", entityManager.getPlayer().getCredits());
+            show("Credits: %d\n\n0) Go back\n", entityManager.getPlayer().getCredits());
         }
+
+        /**
+         * Displays the main screen with player information.
+         */
         private void showMainScreen() {
             Player player = entityManager.getPlayer();
 
-            this.clearScreen();
-            this.show("Current planet: %s (%s)\n", player.getCurrPlanet().getName(),
-                    player.getCurrPlanet().getPlanetType());
-            this.show("Credits: %d\n", player.getCredits());
-            this.show("Hull:    %d/%d\n", player.getCurrHull(), player.getMaxHull());
-            this.show("Fuel:    %d/%d\n", player.getCurrFuel(), player.getMaxFuel());
-            this.show("Cargo:   %d/%d\n\n", player.getCurrCargo(), player.getMaxCargo());
+            clearScreen();
+            show("Current planet: %s (%s)\n", player.getCurrPlanet().name(),
+                    player.getCurrPlanet().planetType());
+            show("Credits: %d\n", player.getCredits());
+            show("Hull:    %d/%d\n", player.getCurrHull(), player.getMaxHull());
+            show("Fuel:    %d/%d\n", player.getCurrFuel(), player.getMaxFuel());
+            show("Cargo:   %d/%d\n\n", player.getCurrCargo(), player.getMaxCargo());
         }
 
+        /**
+         * Displays a list of simple options with corresponding indices.
+         *
+         * @param options The list of options to display.
+         */
         private void showSimpleOptions(String... options) {
             for (int i = 0; i < options.length; ++i) {
-                this.show("%d) %s\n", i, options[i]);
+                show("%d) %s\n", i, options[i]);
             }
         }
 
+        /**
+         * Displays the buy/sell screen for goods.
+         */
         private void showBuySellScreen() {
-            Player player = Game.this.entityManager.getPlayer();
+            Player player = entityManager.getPlayer();
             EntityStats stats = player.entityStats;
-            GoodsPrices goodsPrices = player.getCurrPlanet().getGoodsPrices();
+            GoodsPrices goodsPrices = player.getCurrPlanet().goodsPrices();
 
-            this.clearScreen();
-            this.show("#  Type        Cargo Planet Price\n");
+            clearScreen();
+            show("#  Type        Cargo Planet Price\n");
             for (var index : GoodsIndex.values()) {
-                this.show("%d) %s%s%d%s%d%s%d\n",
+                show("%d) %s%s%d%s%d%s%d\n",
                         index.ordinal() + 1,
                         index.toString(),
                         " ".repeat(12 - index.toString().length()),
@@ -470,32 +582,52 @@ public class Game  {
                         goodsPrices.getGoodAmount(index),
                         " ".repeat(7 - getDigits(goodsPrices.getGoodAmount(index))),
                         goodsPrices.getPrice(index)
-                        );
+                );
             }
-            this.show("Credits: %d\n", stats.getCredits());
-            this.show("Cargo:   %d/%d\n\n", player.getCurrCargo(), player.getMaxCargo());
-            this.show("0) Go back\nEnter good number to buy or sell it\n");
+            show("Credits: %d\n", stats.getCredits());
+            show("Cargo:   %d/%d\n\n", player.getCurrCargo(), player.getMaxCargo());
+            show("0) Go back\nEnter good number to buy or sell it\n");
         }
+
+        /**
+         * Displays information about the player's owned ship.
+         */
         private void showShipInfo() {
-            Player player = Game.this.entityManager.getPlayer();
+            Player player = entityManager.getPlayer();
             Ship ship = player.ownedShip;
 
-            this.clearScreen();
-            this.show("Your ship's statistics:\n");
-            this.show("Hull:    %s\n", ship.getStats().hull.toString());
-            this.show("Shields: %s\n", ship.getStats().shields.toString());
-            this.show("Cargo:   %d/%d\n", player.getCurrCargo(), player.getMaxCargo());
-            this.show("Fuel:    %s\n", ship.getStats().fuel.toString());
-            this.show("Type:    %s\n\n", ship.getShipType().toString());
-        }
-        private void askPlayerName() {
-            this.show("Welcome to Space Trader! Enter your name:\n");
+            clearScreen();
+            show("Your ship's statistics:\n");
+            show("Hull:    %s\n", ship.getStats().hull.toString());
+            show("Shields: %s\n", ship.getStats().shields.toString());
+            show("Cargo:   %d/%d\n", player.getCurrCargo(), player.getMaxCargo());
+            show("Fuel:    %s\n", ship.getStats().fuel.toString());
+            show("Type:    %s\n\n", ship.getShipType().toString());
         }
 
+        /**
+         * Prompts the player to enter their name.
+         */
+        private void askPlayerName() {
+            show("Welcome to Space Trader! Enter your name:\n");
+        }
+
+        /**
+         * Displays a formatted string using the console.
+         *
+         * @param format  The format string.
+         * @param objects The objects to format.
+         */
         private void show(String format, Object... objects) {
             console.printf(format, objects);
         }
 
+        /**
+         * Returns the number of digits in a given integer.
+         *
+         * @param num The integer to count digits for.
+         * @return The number of digits in the integer.
+         */
         private int getDigits(int num) {
             if (num == 0) {
                 return 1;
@@ -506,9 +638,21 @@ public class Game  {
             return (int) (Math.log10(num) + 1);
         }
     }
+
     private static class Input {
         private static final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+
+        /**
+         * Represents an option with a message and an associated action.
+         */
         public record Option(String msg, RunnableWException action) {}
+
+        /**
+         * Prompts the user with a list of options and executes the selected option's action.
+         *
+         * @param options The list of options to display.
+         * @throws Exception If an exception occurs while executing the selected option's action.
+         */
         private static void askOptions(Option... options) throws Exception {
             for (int i = 0; i < options.length; ++i) {
                 System.out.printf("%d) %s\n", i, options[i].msg());
@@ -517,6 +661,14 @@ public class Game  {
             options[optionNumber].action.run();
         }
 
+        /**
+         * Prompts the user to enter a number within a specified range.
+         *
+         * @param minimum The minimum allowed number.
+         * @param maximum The maximum allowed number.
+         * @return The selected number.
+         * @throws IOException If an I/O error occurs while reading input.
+         */
         private static int askNumber(int minimum, int maximum) throws IOException {
             while (true) {
                 System.out.print(">>> ");
@@ -533,6 +685,14 @@ public class Game  {
             }
         }
 
+        /**
+         * Prompts the user to enter a string, applying a predicate to validate the input.
+         *
+         * @param predicate The predicate to validate the input.
+         * @param stream    The PrintStream to display error messages.
+         * @return The validated input string.
+         * @throws IOException If an I/O error occurs while reading input.
+         */
         private static String askString(Predicate<String> predicate, PrintStream stream) throws IOException {
             String input;
             while (predicate.test(input = bufferedReader.readLine())) {
@@ -541,7 +701,5 @@ public class Game  {
 
             return input;
         }
-
-        private record Transaction(int good, int amount) {}
     }
 }

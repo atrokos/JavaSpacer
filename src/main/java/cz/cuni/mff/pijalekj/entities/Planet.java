@@ -4,61 +4,118 @@ import cz.cuni.mff.pijalekj.constants.Constants;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.enums.PlanetIndustryType;
 
-import java.util.Arrays;
 import java.util.Random;
-import java.util.stream.IntStream;
 
-public class Planet {
-    private final String name;
-    private final int planetID;
-    private GoodsPrices goodsPrices;
-    private final PlanetIndustryType planetType;
-    public Planet(String name, PlanetIndustryType planetType, int planetID, GoodsPrices goodsPrices) {
-        this.name = name;
-        this.planetID = planetID;
-        this.goodsPrices = goodsPrices;
-        this.planetType = planetType;
-    }
-    public String getName() {
-        return this.name;
-    }
-    public int getPlanetID() {
-        return this.planetID;
-    }
-    public GoodsPrices getGoodsPrices() {
-        return this.goodsPrices;
-    }
-    public PlanetIndustryType getPlanetType() {
-        return this.planetType;
+/**
+ * The Planet class represents a celestial body in the game, with attributes such as name,
+ * planet ID, goods and their prices; and industry type. It provides methods for buying and selling goods,
+ * updating the planet's state, and computing prices.
+ *
+ * @param name        The name of the planet.
+ * @param planetID    The unique identifier for the planet.
+ * @param goodsPrices Goods and their prices associated with the planet.
+ * @param planetType  The industry type of the planet.
+ */
+public record Planet(String name, PlanetIndustryType planetType, int planetID, GoodsPrices goodsPrices) {
+    /**
+     * Constructor for creating a new Planet object.
+     *
+     * @param name        The name of the planet.
+     * @param planetType  The industry type of the planet.
+     * @param planetID    The unique identifier for the planet.
+     * @param goodsPrices Goods prices associated with the planet.
+     */
+    public Planet {
     }
 
-    // Good - the good to be bought from the planet; amount - how many to buy;
-    // returns the final price (positive)
+    /**
+     * Gets the name of the planet.
+     *
+     * @return The name of the planet.
+     */
+    @Override
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Gets the unique identifier for the planet.
+     *
+     * @return The planet ID.
+     */
+    @Override
+    public int planetID() {
+        return planetID;
+    }
+
+    /**
+     * Gets the goods prices associated with the planet.
+     *
+     * @return Goods prices of the planet.
+     */
+    @Override
+    public GoodsPrices goodsPrices() {
+        return goodsPrices;
+    }
+
+    /**
+     * Gets the industry type of the planet.
+     *
+     * @return The industry type.
+     */
+    @Override
+    public PlanetIndustryType planetType() {
+        return planetType;
+    }
+
+    /**
+     * Buys goods from the planet, updating the goods prices and returning the final price.
+     *
+     * @param good   The good to be bought from the planet.
+     * @param amount How many to buy.
+     * @return The final price (positive).
+     */
     public int buy(int good, int amount) {
-        this.goodsPrices.removeGood(good, amount);
-        return amount * this.goodsPrices.getPrice(good);
+        goodsPrices.removeGood(good, amount);
+        return amount * goodsPrices.getPrice(good);
     }
 
-    // Good - the good to be sold to the planet; amount - how many to sell
-    // Returns the final cost (positive)
+    /**
+     * Sells goods to the planet, updating the goods prices and returning the final cost.
+     *
+     * @param good   The good to be sold to the planet.
+     * @param amount How many to sell.
+     * @return The final cost (positive).
+     */
     public int sell(int good, int amount) {
-        this.goodsPrices.addGood(good, amount);
-        return amount * this.goodsPrices.getPrice(good);
-    }
-    public void update() {
-        this.updateIndustry();
-        this.updateItems();
-        this.updatePrices();
+        goodsPrices.addGood(good, amount);
+        return amount * goodsPrices.getPrice(good);
     }
 
+    /**
+     * Updates the state of the planet, including industry, items, and prices.
+     */
+    public void update() {
+        updateIndustry();
+        updateItems();
+        updatePrices();
+    }
+
+    /**
+     * Updates the industry of the planet based on its type.
+     */
     private void updateIndustry() {
-        String baseKey = this.getPlanetType().toString() + ".Production.";
+        String baseKey = planetType().toString() + ".Production.";
 
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
-            this.goodsPrices.addGood(goodType.ordinal(), Constants.goods.getLong(key).intValue());
+            goodsPrices.addGood(goodType.ordinal(), Constants.goods.getLong(key).intValue());
         }
     }
+
+    /**
+     * Updates the prices of goods on the planet, introducing randomness.
+     */
     private void updatePrices() {
         Random random = new Random();
 
@@ -66,29 +123,37 @@ public class Planet {
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
             int basePrice = Constants.goods.getLong(key).intValue() + random.nextInt(0, 21);
-            int offset = this.goodsPrices.getGoodAmount(goodType.ordinal());
+            int offset = goodsPrices.getGoodAmount(goodType.ordinal());
 
-            this.goodsPrices.setPrice(goodType.ordinal(), this.computePrice(basePrice, offset));
+            goodsPrices.setPrice(goodType.ordinal(), computePrice(basePrice, offset));
         }
     }
+
+    /**
+     * Updates the items on the planet based on its type.
+     */
     private void updateItems() {
-        String baseKey = this.getPlanetType().toString() + ".Consumption.";
+        String baseKey = planetType().toString() + ".Consumption.";
 
         for (var goodType : GoodsIndex.values()) {
             String key = baseKey + goodType;
-            int by = Math.min(this.goodsPrices.getGoodAmount(goodType.ordinal()), Constants.goods.getLong(key).intValue());
-            this.goodsPrices.removeGood(goodType.ordinal(), by);
+            int by = Math.min(goodsPrices.getGoodAmount(goodType.ordinal()), Constants.goods.getLong(key).intValue());
+            goodsPrices.removeGood(goodType.ordinal(), by);
         }
     }
+
+    /**
+     * Computes the new price based on the base price and offset.
+     *
+     * @param base   The base price.
+     * @param offset The offset value.
+     * @return The computed price.
+     */
     private int computePrice(int base, int offset) {
         int newPrice = base - (offset / 3);
         if (newPrice <= 0) {
             newPrice = 20;
         }
         return newPrice;
-    }
-    private int consumeGood(int origAmount, int by) {
-        int new_amount = origAmount - by;
-        return Math.max(0, new_amount);
     }
 }

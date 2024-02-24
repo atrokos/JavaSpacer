@@ -5,7 +5,17 @@ import cz.cuni.mff.pijalekj.entities.GoodsPrices;
 import cz.cuni.mff.pijalekj.enums.GoodsIndex;
 import cz.cuni.mff.pijalekj.enums.PlanetIndustryType;
 
+/**
+ * The GoodsBuilder class provides static methods for constructing goods-related objects,
+ * such as goods prices for a specific planet industry type.
+ */
 public class GoodsBuilder {
+    /**
+     * Generates default goods prices based on a given planet industry type.
+     *
+     * @param type  The planet industry type for which goods prices are generated.
+     * @return      The GoodsPrices object representing the default goods prices.
+     */
     public static GoodsPrices defaultGoodsPrices(PlanetIndustryType type) {
         String goodKey = type.toString() + ".Consumption.";
         String priceKey = "BasePrices.";
@@ -13,18 +23,12 @@ public class GoodsBuilder {
         var prices = new int[9];
 
         for (var goodIndex : GoodsIndex.values()) {
-            int amount = Constants.goods.getLong(goodKey + goodIndex).intValue();
+            int amount = 3 * Constants.goods.getLong(goodKey + goodIndex).intValue();
             int price = Constants.goods.getLong(priceKey + goodIndex).intValue();
 
             goods[goodIndex.ordinal()] = amount;
             prices[goodIndex.ordinal()] = price;
         }
-
-        return new GoodsPrices(goods, prices);
-    }
-    public static GoodsPrices emptyGoodsPrices(PlanetIndustryType type) {
-        var goods = new int[9];
-        var prices = new int[9];
 
         return new GoodsPrices(goods, prices);
     }

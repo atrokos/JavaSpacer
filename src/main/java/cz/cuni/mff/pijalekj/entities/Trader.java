@@ -13,97 +13,137 @@ import cz.cuni.mff.pijalekj.ships.Ship;
 
 import java.util.*;
 
+/**
+ * The Trader class represents a trader entity in the game, extending the Entity class.
+ * It includes additional functionality for trading and planning travel routes.
+ */
 public class Trader extends Entity {
     private Deque<Integer> path = new LinkedList<>();
+
+    /**
+     * Constructs a Trader object with specified attributes.
+     *
+     * @param travelManager     The TravelManager for managing travel-related functionalities.
+     * @param entityManager     The EntityManager for managing entities in the game.
+     * @param criminalsManager  The CriminalsManager for managing criminal entities in the game.
+     * @param ownedShip         The Ship owned by the trader.
+     * @param entityStats       The EntityStats representing the trader's statistics and inventory.
+     * @param prevAction        The previous action of the trader.
+     * @param entityID          The ID of the trader entity.
+     */
     public Trader(TravelManager travelManager, EntityManager entityManager, CriminalsManager criminalsManager,
                   Ship ownedShip, EntityStats entityStats, EntityActions prevAction, int entityID) {
-        super(travelManager, entityManager, criminalsManager, ownedShip, entityStats, prevAction, entityID);
+        super(travelManager, entityManager, ownedShip, entityStats, prevAction, entityID);
     }
 
+    /**
+     * Handles the battle decision for the trader. Traders always choose to flee.
+     *
+     * @param opponent The player or another entity to battle.
+     * @return A BattleDecision representing the trader's decision to flee.
+     */
     @Override
     public BattleDecision battle(Playerlike opponent) {
-        return new BattleDecision(BattleActionType.flee, this.ownedShip.getFleeChance());
+        return new BattleDecision(BattleActionType.flee, ownedShip.getFleeChance());
     }
 
+    /**
+     * Handles the actions to be performed when the trader wins a battle.
+     *
+     * @param opponent The player or another entity that the trader defeated.
+     */
     @Override
     public void won(Playerlike opponent) {
-        this.takeAll(opponent.getEntityStats());
-        this.entityStats.transferAllCredits(opponent.getEntityStats());
+        takeAll(opponent.getEntityStats());
+        entityStats.transferAllCredits(opponent.getEntityStats());
     }
 
-    @Override
-    public void lost() {
-
-    }
-
+    /**
+     * Handles the trader's turn during gameplay, determining actions such as trading and traveling.
+     *
+     * @return An OptionalInt representing the ID of the entity to interact with (e.g., battle or trade).
+     */
     @Override
     public OptionalInt play() {
-        if (!this.isAlive()) {
+        if (!isAlive()) {
             return OptionalInt.empty();
         }
 
-        if (this.travelManager.isTraveling()) {
-            this.travel();
+        if (travelManager.isTraveling()) {
+            travel();
             return OptionalInt.empty();
         }
 
-        this.maintenance();
-        if (this.isFull()) {
-            this.sell();
+        maintenance();
+        if (isFull()) {
+            sell();
         }
 
-        if (this.path.isEmpty()) {
-            if (this.prevAction != EntityActions.sell) {
-                this.sell();
-                this.prevAction = EntityActions.sell;
+        if (path.isEmpty()) {
+            if (prevAction != EntityActions.sell) {
+                sell();
+                prevAction = EntityActions.sell;
                 return OptionalInt.empty();
-            } else if (this.ownedShip.getStats().fuel.getCurr() < 13) {
+            } else if (ownedShip.getStats().fuel.getCurr() < 13) {
                 return OptionalInt.empty();
             } else {
-                this.createPlan();
+                createPlan();
             }
         } else {
-            int nextDestinationID = this.path.pop();
-            this.travelManager.travelStart(nextDestinationID);
-            this.prevAction = EntityActions.travelPrep;
+            int nextDestinationID = path.pop();
+            travelManager.travelStart(nextDestinationID);
+            prevAction = EntityActions.travelPrep;
         }
         return OptionalInt.empty();
     }
 
+    /**
+     * Creates a trading plan for the trader, determining the best planets to visit for trading.
+     */
     private void createPlan() {
         Deque<Integer> newPath = new LinkedList<>();
-        newPath.add(this.travelManager.getCurrLocationID());
+        newPath.add(travelManager.getCurrLocationID());
 
         HashSet<Integer> visited = new HashSet<>();
-        var results = this.findBestPlanet(newPath, 0, Integer.MIN_VALUE, visited, -1);
-        var currPlanet = this.travelManager.getCurrLocation();
+        var results = findBestPlanet(newPath, 0, Integer.MIN_VALUE, visited, -1);
+        var currPlanet = travelManager.getCurrLocation();
 
         for (var goodIndex : GoodsIndex.values()) {
             int index = goodIndex.ordinal();
-            this.entityStats.removeCredits(currPlanet.buy(index, results.toBuy[index]));
-            this.entityStats.addGood(index, results.toBuy[index]);
+            entityStats.removeCredits(currPlanet.buy(index, results.toBuy[index]));
+            entityStats.addGood(index, results.toBuy[index]);
         }
 
         results.path.removeFirst();
-        this.path = results.path;
-        this.travelManager.travelStart(this.path.removeFirst());
+        path = results.path;
+        travelManager.travelStart(path.removeFirst());
     }
 
+    /**
+     * Finds the best planet for trading based on a recursive exploration of possible travel routes.
+     *
+     * @param path          The current path being explored.
+     * @param travelLength  The current travel length in the exploration.
+     * @param rating        The current rating of the exploration.
+     * @param visited       A set of visited planets to avoid revisiting.
+     * @param counter       A counter to limit the exploration depth.
+     * @return A TraderPlan containing the best path, rating, and items to buy.
+     */
     private TraderPlan findBestPlanet(Deque<Integer> path, int travelLength, int rating,
                                       HashSet<Integer> visited, int counter)
     {
         int currPlanetID = path.getLast();
         int bestRating = rating;
-        Deque<Integer> bestPath = new LinkedList<Integer>(path);
+        Deque<Integer> bestPath = new LinkedList<>(path);
         int[] toBuy = new int[9];
 
         ++counter;
         visited.add(currPlanetID);
 
-        if (currPlanetID != this.travelManager.getCurrLocationID()) {
-            var planetRating = this.ratePlanet(this.travelManager.getPlanet(currPlanetID), travelLength);
+        if (currPlanetID != travelManager.getCurrLocationID()) {
+            var planetRating = ratePlanet(travelManager.getPlanet(currPlanetID), travelLength);
             if (planetRating.rating > bestRating) {
-                bestRating= planetRating.rating;
+                bestRating = planetRating.rating;
                 toBuy = planetRating.toBuy;
             }
         }
@@ -112,14 +152,14 @@ public class Trader extends Entity {
             return new TraderPlan(bestPath, bestRating, toBuy);
         }
 
-        for (int neighborID : this.travelManager.getNeighbors(currPlanetID)) {
+        for (int neighborID : travelManager.getNeighbors(currPlanetID)) {
             if (visited.contains(neighborID)) {
                 continue;
             }
 
             path.addLast(neighborID);
-            int distance = travelLength + this.travelManager.getDistanceBetween(currPlanetID, neighborID);
-            var found = this.findBestPlanet(path, distance, bestRating, visited, counter);
+            int distance = travelLength + travelManager.getDistanceBetween(currPlanetID, neighborID);
+            var found = findBestPlanet(path, distance, bestRating, visited, counter);
             path.removeLast();
 
             if (found.rating > bestRating) {
@@ -132,11 +172,18 @@ public class Trader extends Entity {
         return new TraderPlan(bestPath, bestRating, toBuy);
     }
 
+    /**
+     * Rates a planet based on its goods prices and distance from the current location.
+     *
+     * @param planet        The planet to be rated.
+     * @param travelLength  The current travel length in the exploration.
+     * @return A RatingBuy object containing the rating and items to buy on the planet.
+     */
     private RatingBuy ratePlanet(Planet planet, int travelLength) {
         int[] toBuy = new int[9];
         SortedMap<Integer, Integer> goodsDiff = new TreeMap<>();
-        var currPlanetGoodsPrices = this.travelManager.getCurrLocation().getGoodsPrices();
-        var planetGoodsPrices = planet.getGoodsPrices();
+        var currPlanetGoodsPrices = travelManager.getCurrLocation().goodsPrices();
+        var planetGoodsPrices = planet.goodsPrices();
         int rating = -(travelLength * Constants.fuelCost);
 
         for (var goodIndex : GoodsIndex.values()) {
@@ -150,17 +197,10 @@ public class Trader extends Entity {
                 goodsDiff.put(priceDiff, index);
         }
 
-        int credits = this.entityStats.getCredits();
-        int freeSpace = this.ownedShip.getStats().maxCargo - this.entityStats.getTotalGoodsAmount();
+        int credits = entityStats.getCredits();
+        int freeSpace = ownedShip.getStats().maxCargo - entityStats.getTotalGoodsAmount();
         for (var key : goodsDiff.reversed().keySet()) {
-            int index = 0;
-            try {
-                index = goodsDiff.get(key);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                System.out.println("Key: " + key);
-                throw new RuntimeException();
-            }
+            int index = goodsDiff.get(key);
             int available = currPlanetGoodsPrices.getGoodAmount(index);
             int affordable = credits / currPlanetGoodsPrices.getPrice(index);
             // limit one commodity to 10 pieces max, so that traders won't buy the best one out
@@ -181,6 +221,13 @@ public class Trader extends Entity {
         return new RatingBuy(rating, toBuy);
     }
 
+    /**
+     * Represents a trading plan with the best path, rating, and items to buy.
+     */
     private record TraderPlan(Deque<Integer> path, int rating, int[] toBuy) {}
+
+    /**
+     * Represents the rating and items to buy on a planet.
+     */
     private record RatingBuy(int rating, int[] toBuy) {}
 }
